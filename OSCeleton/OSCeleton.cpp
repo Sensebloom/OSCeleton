@@ -7,7 +7,7 @@
 
 
 
-char *ADDRESS = "192.168.1.255"; //"127.0.0.1";
+char *ADDRESS = "127.0.0.1";
 int PORT = 7110;
 
 #define OUTPUT_BUFFER_SIZE 1024
@@ -20,19 +20,19 @@ float jointCoords[3];
 //If == 3, we send x,y,z coords, if == 2, we only send x,y. Useful for software like animata.
 int nDimensions = 3;
 
-//Multipliers for coordinate system. This is useful if you use software like animata, 
+//Multipliers for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.
 float mult_x = 1;
 float mult_y = 1;
 float mult_z = 1;
 
-//Offsets for coordinate system. This is useful if you use software like animata, 
+//Offsets for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.
 float off_x = 0;
 float off_y = 0;
 float off_z = 0;
 
-bool multiPlayer = true;
+int multiPlayer = 1;
 
 xn::UserGenerator userGenerator;
 XnChar g_strPose[20] = "";
@@ -45,7 +45,7 @@ void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& generator, XnUserID nId, v
 	printf("New User %d\n", nId);
 	if (g_bNeedPose) {
 		userGenerator.GetPoseDetectionCap().StartPoseDetection(g_strPose, nId);
-		
+
 		osc::OutboundPacketStream p( osc_buffer, OUTPUT_BUFFER_SIZE );
 		p << osc::BeginBundleImmediate;
 		p << osc::BeginMessage( "/new_user" );
@@ -117,7 +117,6 @@ void XN_CALLBACK_TYPE UserCalibration_CalibrationEnd(xn::SkeletonCapability& cap
 
 
 
-/*** OSC ***/
 int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 	XnSkeletonJointPosition joint;
 	userGenerator.GetSkeletonCap().GetSkeletonJointPosition(player, eJoint, joint);
@@ -239,7 +238,26 @@ void sendOSC(const xn::DepthMetaData& dmd)
 
 
 
-int usage() {
+int usage(char *name) {
+	printf("\nUsage: %s [OPTIONS]\n\
+Example: %s -a 127.0.0.1 -p 7110 -d 3 -n 1 -mx 1 -my 1 -mz 1 -ox 0 -oy 0 -oz 0\n\
+\n\
+(The above example corresponds to the defaults)\n\
+\n\
+Options:\n\
+  -a\t Address to send OSC packets to.\n\
+  -p\t Port to send OSC packets to.\n\
+  -d\t Number of dimensions (2 or 3).\n\
+  -n\t Multiuser support (0 or 1).\n\
+  -mx\t Multiplier for X coordinates.\n\
+  -my\t Multiplier for Y coordinates.\n\
+  -mz\t Multiplier for Z coordinates.\n\
+  -ox\t Offset to add to X coordinates.\n\
+  -oy\t Offset to add to Y coordinates.\n\
+  -oz\t Offset to add to Z coordinates.\n\
+  -h\t Show help.\n\n\
+For a more detailed explanation of options consult the README file.\n\n",
+		   name, name);
 	exit(1);
 }
 
@@ -247,89 +265,90 @@ int usage() {
 
 int main(int argc, char **argv)
 {
-	
+
 	if (argc > 1) {
 		while ((argc > 1) && (argv[1][0] == '-')) {
 			switch (argv[1][1]) {
 				case 'h':
-					usage();
+					usage(argv[0]);
 					break;
 				case 'a': //Set ip address
 					ADDRESS = argv[2];
 					break;
 				case 'p': //Set port
-					if(sscanf(argv[2], "%d", &PORT)  == EOF ) { 
+					if(sscanf(argv[2], "%d", &PORT) == EOF ) {
 						printf("Bad port number given.\n");
-						usage();
-					} 
+						usage(argv[0]);
+					}
 					break;
 				case 'm': //Set multipliers
 					switch(argv[1][2]) {
 						case 'x': // Set X multiplier
-							if(sscanf(argv[2], "%f", &mult_x)  == EOF ) { 
+							if(sscanf(argv[2], "%f", &mult_x)  == EOF ) {
 								printf("Bad X multiplier.\n");
-								usage();
+								usage(argv[0]);
 							}
 							break;
 						case 'y': // Set Y multiplier
-							if(sscanf(argv[2], "%f", &mult_y)  == EOF ) { 
+							if(sscanf(argv[2], "%f", &mult_y)  == EOF ) {
 								printf("Bad Y multiplier.\n");
-								usage();
+								usage(argv[0]);
 							}
 							break;
 						case 'z': // Set Z multiplier
-							if(sscanf(argv[2], "%f", &mult_z)  == EOF ) { 
+							if(sscanf(argv[2], "%f", &mult_z)  == EOF ) {
 								printf("Bad Z multiplier.\n");
-								usage();
+								usage(argv[0]);
 							}
 							break;
 						default:
 							printf("Bad multiplier option given.\n");
-							usage();
+							usage(argv[0]);
 					}
 					break;
 				case 'o': //Set offsets
 					switch(argv[1][2]) {
 						case 'x': // Set X offset
-							if(sscanf(argv[2], "%f", &off_x)  == EOF ) { 
+							if(sscanf(argv[2], "%f", &off_x)  == EOF ) {
 								printf("Bad X offset.\n");
-								usage();
+								usage(argv[0]);
 							}
 							break;
 						case 'y': // Set Y offset
-							if(sscanf(argv[2], "%f", &off_y)  == EOF ) { 
+							if(sscanf(argv[2], "%f", &off_y)  == EOF ) {
 								printf("Bad Y offset.\n");
-								usage();
+								usage(argv[0]);
 							}
 							break;
 						case 'z': // Set Z offset
-							if(sscanf(argv[2], "%f", &off_z)  == EOF ) { 
+							if(sscanf(argv[2], "%f", &off_z)  == EOF ) {
 								printf("Bad Z offset.\n");
-								usage();
+								usage(argv[0]);
 							}
 							break;
 						default:
 							printf("Bad offset option given.\n");
-							usage();
+							usage(argv[0]);
 					}
 					break;
 				case 'd': // Set nDimensions
-					if(sscanf(argv[2], "%d", &nDimensions) == EOF || (nDimensions != 2 && nDimensions != 3)) { 
+					if(sscanf(argv[2], "%d", &nDimensions) == EOF || (nDimensions != 2 && nDimensions != 3)) {
 						printf("Number of dimensions must be 2 or 3.\n");
-						usage();
+						usage(argv[0]);
 					}
 					break;
 				case 'n': // Set multiuser support
-					if(sscanf(argv[2], "%d", &multiPlayer) == EOF) { 
+					if(sscanf(argv[2], "%d", &multiPlayer) == EOF) {
 						printf("Multi user option must be 0 or 1.\n");
-						usage();
+						usage(argv[0]);
 					}
 					break;
 				default:
 					printf("Unrecognized option.\n");
-					usage();
+					usage(argv[0]);
 			}
-		}		
+			argv++;
+		}
 	}
 
 	xn::Context context;
@@ -357,9 +376,10 @@ int main(int argc, char **argv)
 
 	transmitSocket = new UdpTransmitSocket(IpEndpointName(ADDRESS, PORT));
 
+	printf("Configured to send OSC messages to %s:%d\n", ADDRESS, PORT);
 	printf("Initialized Kinect, looking for users...\n");
 	context.StartGeneratingAll();
-	
+
 	while (true) {
 		// Read next available data
 		context.WaitAnyUpdateAll();

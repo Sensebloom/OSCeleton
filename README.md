@@ -19,11 +19,14 @@ Folow his instructions for installing the OpenNI framwork, the driver, and the N
 Then you can run one of the precompiled binaries in the "bin" directory or compile your own: Just type "make" on linux or osx; on windows you can use the VC++ express project.
 
 If you run the executable without any arguments, it will send the OSC messagens in the default format to localhost on port 7110.
-To learn about the OSC message format, continue reading below or check out our processing examples at [https://github.com/Sensebloom/OSCeleton-examples](https://github.com/Sensebloom/OSCeleton-examples).
-Another fun way to test OSCeleton is to use the awesome animata skeletal animation software by the Kitchen Budapest guys. You can get it at: [http://animata.kibu.hu/](http://animata.kibu.hu/)
+To learn about the OSC message format, continue reading below or check out our processing examples at
+[https://github.com/Sensebloom/OSCeleton-examples](https://github.com/Sensebloom/OSCeleton-examples)
+Another fun way to test OSCeleton is to use the awesome animata skeletal animation software by the Kitchen Budapest guys. You can get it at:
+[http://animata.kibu.hu/](http://animata.kibu.hu/)
 
 Animata needs its OSC messages in a very specific format, so you must run OSCeleton like this:
-> OSCeleton -d 2 -n 0 -mx 320 -my 240
+        OSCeleton -d 2 -n 0 -mx 320 -my 240
+
 If your animation is going crazy try to play with -mx and -my values, and -ox and -oy values too ;)
 
 To get a complete list of available options run OSCeleton -h.
@@ -34,63 +37,68 @@ OSC Message format
 
 ### New user detected - no skeleton available yet. This is a good time for you to ask the user to do the calibration pose:
 
-> Address pattern: "/new_user"
-> Type tag: "i"
-> i: A numeric ID attributed to the new user.
+    Address pattern: "/new_user"
+    Type tag: "i"
+    i: A numeric ID attributed to the new user.
+
 
 ### New skeleton detected - The calibration was finished successfully, joint coordinate messages for this user will be incoming soon ;):
 
-> Address pattern: "/new_skel"
-> Type tag: "i"
-> i: ID of the user whose skeleton is detected.
+    Address pattern: "/new_skel"
+    Type tag: "i"
+    i: ID of the user whose skeleton is detected.
+
 
 ### Lost user - we have lost the user with the following id:
 
-> Address pattern: "/lost_user"
-> Type tag: "i"
-> i: The ID of the lost user. (This ID will be free for reuse from now on)
+    Address pattern: "/lost_user"
+    Type tag: "i"
+    i: The ID of the lost user. (This ID will be free for reuse from now on)
+
 
 ### Joint message - message with the coordinates of each skeleton joint:
 
-> Address pattern: "/joint"
-> Type tag: "sifff"
-> s: Joint name, check out the full list of joints below.
-> i: The ID of the user.
-> f: X coordinate of joint in interval [0.0, 1.0]
-> f: Y coordinate of joint in interval [0.0, 1.0]
-> f: Z coordinate of joint in interval [0.0, 7.0]
+    Address pattern: "/joint"
+    Type tag: "sifff"
+    s: Joint name, check out the full list of joints below.
+    i: The ID of the user.
+    f: X coordinate of joint in interval [0.0, 1.0]
+    f: Y coordinate of joint in interval [0.0, 1.0]
+    f: Z coordinate of joint in interval [0.0, 7.0]
 
 If you use "-d 2" option, the typetag will be "siff", and no Z coordinate will be sent.
 If you use "-n 0" option, the typetag will be "sfff", and no user ID, new_user, new_skel, lost_user messages will be sent.
 
+
 ### Full list of joints
-> head
-> neck
-> torso
->
-> r_collar #not working yet
-> r_shoulder
-> r_elbow #not working yet
-> r_wrist #not working yet
-> r_hand
-> r_finger #not working yet
->
-> l_collar #not working yet
-> l_shoulder
-> l_elbow #not working yet
-> l_wrist #not working yet
-> l_hand
-> l_finger #not working yet
->
-> r_hip
-> r_knee
-> r_ankle
-> r_foot
->
-> l_hip
-> l_knee
-> l_ankle
-> l_foot
+
+* head
+* neck
+* torso
+
+* r_collar #not working yet
+* r_shoulder
+* r_elbow #not working yet
+* r_wrist #not working yet
+* r_hand
+* r_finger #not working yet
+
+* l_collar #not working yet
+* l_shoulder
+* l_elbow #not working yet
+* l_wrist #not working yet
+* l_hand
+* l_finger #not working yet
+
+* r_hip
+* r_knee
+* r_ankle
+* r_foot
+
+* l_hip
+* l_knee
+* l_ankle
+* l_foot
 
 
 Other

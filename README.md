@@ -42,14 +42,13 @@ it at:
 [http://animata.kibu.hu/](http://animata.kibu.hu/)
 
 Animata needs its OSC messages in a very specific format, so you must
-run OSCeleton like this:
-    OSCeleton -d 2 -n 0 -mx 320 -my 240
-
-(This will be deprecated, I'm introducing a simpler option soon for
-animata compatibility)
+use the "-k" ("kitchen" mode) option. Multiplying the x and y
+coordinates and adding some offsets can also be useful to tune the
+size of the skeleton, try running it like this:
+    OSCeleton.exe -k -mx 640 -my 480 -ox -160
 
 If your animation is going crazy try to play with -mx and -my values,
-and -ox and -oy values too ;)
+and -ox and -oy values a bit.
 
 To get a complete list of available options run OSCeleton -h.
 
@@ -91,13 +90,10 @@ OSC Message format
     f: Y coordinate of joint in interval [0.0, 1.0]
     f: Z coordinate of joint in interval [0.0, 7.0]
 
-If you use "-d 2" option, the typetag will be "siff", and no Z
-coordinate will be sent. (This will be deprecated in favor of a
-simpler option for animata compatibility)
-
-If you use "-n 0" option, the typetag will be "sfff", and no user ID,
-new_user, new_skel, lost_user messages will be sent. (This will be
-deprecated in favor of a simpler option for animata compatibility)
+If you use "-k" option, the typetag will be "sff", and no user ID or Z
+coordinate will be sent. new_user, new_skel and lost_user messages
+will not be sent either. This is used for compatibility with the
+excellent Kitchen Budapest animata skeletal animation software.
 
 
 ### Full list of joints
@@ -108,14 +104,14 @@ deprecated in favor of a simpler option for animata compatibility)
 
 * r_collar #not working yet
 * r_shoulder
-* r_elbow #not working yet
+* r_elbow
 * r_wrist #not working yet
 * r_hand
 * r_finger #not working yet
 
 * l_collar #not working yet
 * l_shoulder
-* l_elbow #not working yet
+* l_elbow
 * l_wrist #not working yet
 * l_hand
 * l_finger #not working yet

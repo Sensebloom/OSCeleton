@@ -265,90 +265,112 @@ For a more detailed explanation of options consult the README file.\n\n",
 
 int main(int argc, char **argv)
 {
-
-	if (argc > 1) {
-		while ((argc > 1) && (argv[1][0] == '-')) {
-			switch (argv[1][1]) {
-				case 'h':
-					usage(argv[0]);
-					break;
-				case 'a': //Set ip address
-					ADDRESS = argv[2];
-					break;
-				case 'p': //Set port
-					if(sscanf(argv[2], "%d", &PORT) == EOF ) {
-						printf("Bad port number given.\n");
-						usage(argv[0]);
-					}
-					break;
-				case 'm': //Set multipliers
-					switch(argv[1][2]) {
-						case 'x': // Set X multiplier
-							if(sscanf(argv[2], "%f", &mult_x)  == EOF ) {
-								printf("Bad X multiplier.\n");
-								usage(argv[0]);
-							}
-							break;
-						case 'y': // Set Y multiplier
-							if(sscanf(argv[2], "%f", &mult_y)  == EOF ) {
-								printf("Bad Y multiplier.\n");
-								usage(argv[0]);
-							}
-							break;
-						case 'z': // Set Z multiplier
-							if(sscanf(argv[2], "%f", &mult_z)  == EOF ) {
-								printf("Bad Z multiplier.\n");
-								usage(argv[0]);
-							}
-							break;
-						default:
-							printf("Bad multiplier option given.\n");
-							usage(argv[0]);
-					}
-					break;
-				case 'o': //Set offsets
-					switch(argv[1][2]) {
-						case 'x': // Set X offset
-							if(sscanf(argv[2], "%f", &off_x)  == EOF ) {
-								printf("Bad X offset.\n");
-								usage(argv[0]);
-							}
-							break;
-						case 'y': // Set Y offset
-							if(sscanf(argv[2], "%f", &off_y)  == EOF ) {
-								printf("Bad Y offset.\n");
-								usage(argv[0]);
-							}
-							break;
-						case 'z': // Set Z offset
-							if(sscanf(argv[2], "%f", &off_z)  == EOF ) {
-								printf("Bad Z offset.\n");
-								usage(argv[0]);
-							}
-							break;
-						default:
-							printf("Bad offset option given.\n");
-							usage(argv[0]);
-					}
-					break;
-				case 'd': // Set nDimensions
-					if(sscanf(argv[2], "%d", &nDimensions) == EOF || (nDimensions != 2 && nDimensions != 3)) {
-						printf("Number of dimensions must be 2 or 3.\n");
-						usage(argv[0]);
-					}
-					break;
-				case 'n': // Set multiuser support
-					if(sscanf(argv[2], "%d", &multiPlayer) == EOF) {
-						printf("Multi user option must be 0 or 1.\n");
-						usage(argv[0]);
-					}
-					break;
-				default:
-					printf("Unrecognized option.\n");
-					usage(argv[0]);
-			}
-			argv++;
+	unsigned int arg = 1,
+				 require_argument = 0;
+	while ((arg < argc) && (argv[arg][0] == '-')) {
+		switch (argv[arg][1]) {
+			case 'a':
+			case 'p':
+			case 'm':
+			case 'o':
+			case 'd':
+			case 'n':
+				require_argument = 1;
+				break;
+			default:
+				require_argument = 0;
+				break;
 		}
+
+		if ( require_argument && arg+1 >= argc ) {
+			printf("The option %s require an argument.\n", argv[arg]);
+			usage(argv[0]);
+		}
+
+		switch (argv[arg][1]) {
+			case 'h':
+				usage(argv[0]);
+				break;
+			case 'a': //Set ip address
+				ADDRESS = argv[arg+1];
+				arg += 2;
+				break;
+			case 'p': //Set port
+				if(sscanf(argv[arg+1], "%d", &PORT) == EOF ) {
+					printf("Bad port number given.\n");
+					usage(argv[0]);
+				}
+				break;
+			case 'm': //Set multipliers
+				switch(argv[arg][2]) {
+					case 'x': // Set X multiplier
+						if(sscanf(argv[arg+1], "%f", &mult_x)  == EOF ) {
+							printf("Bad X multiplier.\n");
+							usage(argv[0]);
+						}
+						break;
+					case 'y': // Set Y multiplier
+						if(sscanf(argv[arg+1], "%f", &mult_y)  == EOF ) {
+							printf("Bad Y multiplier.\n");
+							usage(argv[0]);
+						}
+						break;
+					case 'z': // Set Z multiplier
+						if(sscanf(argv[arg+1], "%f", &mult_z)  == EOF ) {
+							printf("Bad Z multiplier.\n");
+							usage(argv[0]);
+						}
+						break;
+					default:
+						printf("Bad multiplier option given.\n");
+						usage(argv[0]);
+				}
+				break;
+			case 'o': //Set offsets
+				switch(argv[arg][2]) {
+					case 'x': // Set X offset
+						if(sscanf(argv[arg+1], "%f", &off_x)  == EOF ) {
+							printf("Bad X offset.\n");
+							usage(argv[0]);
+						}
+						break;
+					case 'y': // Set Y offset
+						if(sscanf(argv[arg+1], "%f", &off_y)  == EOF ) {
+							printf("Bad Y offset.\n");
+							usage(argv[0]);
+						}
+						break;
+					case 'z': // Set Z offset
+						if(sscanf(argv[arg+1], "%f", &off_z)  == EOF ) {
+							printf("Bad Z offset.\n");
+							usage(argv[0]);
+						}
+						break;
+					default:
+						printf("Bad offset option given.\n");
+						usage(argv[0]);
+				}
+				break;
+			case 'd': // Set nDimensions
+				if(sscanf(argv[arg+1], "%d", &nDimensions) == EOF || (nDimensions != 2 && nDimensions != 3)) {
+					printf("Number of dimensions must be 2 or 3.\n");
+					usage(argv[0]);
+				}
+				break;
+			case 'n': // Set multiuser support
+				if(sscanf(argv[arg+1], "%d", &multiPlayer) == EOF) {
+					printf("Multi user option must be 0 or 1.\n");
+					usage(argv[0]);
+				}
+				break;
+			default:
+				printf("Unrecognized option.\n");
+				usage(argv[0]);
+		}
+		if ( reuire_argument )
+			arg += 2;
+		else
+			arg ++;
 	}
 
 	xn::Context context;

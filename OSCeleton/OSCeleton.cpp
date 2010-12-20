@@ -19,15 +19,15 @@ float jointCoords[3];
 
 //Multipliers for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.
-float mult_x = 1;
-float mult_y = 1;
-float mult_z = 1;
+double mult_x = 1;
+double mult_y = 1;
+double mult_z = 1;
 
 //Offsets for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.
-float off_x = 0.0;
-float off_y = 0.0;
-float off_z = 0.0;
+double off_x = 0.0;
+double off_y = 0.0;
+double off_z = 0.0;
 
 bool kitchenMode = false;
 bool mirrorMode = true;

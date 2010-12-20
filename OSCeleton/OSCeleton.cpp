@@ -17,9 +17,6 @@ UdpTransmitSocket *transmitSocket;
 char tmp[50];
 float jointCoords[3];
 
-//If == 3, we send x,y,z coords, if == 2, we only send x,y. Useful for software like animata.
-int nDimensions = 3;
-
 //Multipliers for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.
 float mult_x = 1;
@@ -28,35 +25,33 @@ float mult_z = 1;
 
 //Offsets for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.
-float off_x = 0;
-float off_y = 0;
-float off_z = 0;
+float off_x = 0.0;
+float off_y = 0.0;
+float off_z = 0.0;
 
-int multiPlayer = 1;
+bool kitchenMode = false;
+bool mirrorMode = true;
+int nDimensions = 3;
 
 xn::UserGenerator userGenerator;
 XnChar g_strPose[20] = "";
-XnBool g_bNeedPose = FALSE;
 
 
 
 // Callback: New user was detected
 void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie) {
 	printf("New User %d\n", nId);
-	if (g_bNeedPose) {
-		userGenerator.GetPoseDetectionCap().StartPoseDetection(g_strPose, nId);
+	userGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
 
-		osc::OutboundPacketStream p( osc_buffer, OUTPUT_BUFFER_SIZE );
-		p << osc::BeginBundleImmediate;
-		p << osc::BeginMessage( "/new_user" );
-		p << (int)nId;
-		p << osc::EndMessage;
-		p << osc::EndBundle;
-		transmitSocket->Send(p.Data(), p.Size());
-	}
-	else {
-		userGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
-	}
+	if (kitchenMode) return;
+
+	osc::OutboundPacketStream p( osc_buffer, OUTPUT_BUFFER_SIZE );
+	p << osc::BeginBundleImmediate;
+	p << osc::BeginMessage( "/new_user" );
+	p << (int)nId;
+	p << osc::EndMessage;
+	p << osc::EndBundle;
+	transmitSocket->Send(p.Data(), p.Size());
 }
 
 
@@ -64,6 +59,8 @@ void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& generator, XnUserID nId, v
 // Callback: An existing user was lost
 void XN_CALLBACK_TYPE User_LostUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie) {
 	printf("Lost user %d\n", nId);
+
+	if (kitchenMode) return;
 
 	osc::OutboundPacketStream p( osc_buffer, OUTPUT_BUFFER_SIZE );
 	p << osc::BeginBundleImmediate;
@@ -98,6 +95,8 @@ void XN_CALLBACK_TYPE UserCalibration_CalibrationEnd(xn::SkeletonCapability& cap
 		printf("Calibration complete, start tracking user %d\n", nId);
 		userGenerator.GetSkeletonCap().StartTracking(nId);
 
+		if (kitchenMode) return;
+
 		osc::OutboundPacketStream p( osc_buffer, OUTPUT_BUFFER_SIZE );
 		p << osc::BeginBundleImmediate;
 		p << osc::BeginMessage( "/new_skel" );
@@ -108,10 +107,7 @@ void XN_CALLBACK_TYPE UserCalibration_CalibrationEnd(xn::SkeletonCapability& cap
 	}
 	else {
 		printf("Calibration failed for user %d\n", nId);
-		if (g_bNeedPose)
-			userGenerator.GetPoseDetectionCap().StartPoseDetection(g_strPose, nId);
-		else
-			userGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
+		userGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
 	}
 }
 
@@ -125,9 +121,9 @@ int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 		return -1;
 
 	jointCoords[0] = player;
-	jointCoords[1] = (mult_x * (1280 - joint.position.X) / 2560); //Normalize coords to 0..1 interval
-	jointCoords[2] = (mult_y * (1280 - joint.position.Y) / 2560); //Normalize coords to 0..1 interval
-	jointCoords[3] = (mult_z * joint.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
+	jointCoords[1] = off_x + (mult_x * (1280 - joint.position.X) / 2560); //Normalize coords to 0..1 interval
+	jointCoords[2] = off_y + (mult_y * (1280 - joint.position.Y) / 2560); //Normalize coords to 0..1 interval
+	jointCoords[3] = off_z + (mult_z * joint.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
 	return 0;
 }
 
@@ -136,7 +132,7 @@ int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 void genOscMsg(osc::OutboundPacketStream *p, char *name) {
 	*p << osc::BeginMessage( "/joint" );
 	*p << name;
-	if (multiPlayer)
+	if (!kitchenMode)
 		*p << (int)jointCoords[0];
 	for (int i = 1; i < nDimensions+1; i++)
 		*p << jointCoords[i];
@@ -246,14 +242,14 @@ Example: %s -a 127.0.0.1 -p 7110 -d 3 -n 1 -mx 1 -my 1 -mz 1 -ox 0 -oy 0 -oz 0\n
 Options:\n\
   -a\t Address to send OSC packets to.\n\
   -p\t Port to send OSC packets to.\n\
-  -d\t Number of dimensions (2 or 3).\n\
-  -n\t Multiuser support (0 or 1).\n\
+  -r\t Reverse image (disable \"mirror mode\"). NOT WORKING YET.\n\
   -mx\t Multiplier for X coordinates.\n\
   -my\t Multiplier for Y coordinates.\n\
   -mz\t Multiplier for Z coordinates.\n\
   -ox\t Offset to add to X coordinates.\n\
   -oy\t Offset to add to Y coordinates.\n\
   -oz\t Offset to add to Z coordinates.\n\
+  -k\t Enable \"Kitchen\" mode (Animata compatibility mode).\n\
   -h\t Show help.\n\n\
 For a more detailed explanation of options consult the README file.\n\n",
 		   name, name);
@@ -272,8 +268,6 @@ int main(int argc, char **argv)
 			case 'p':
 			case 'm':
 			case 'o':
-			case 'd':
-			case 'n':
 				require_argument = 1;
 				break;
 			default:
@@ -350,17 +344,11 @@ int main(int argc, char **argv)
 						usage(argv[0]);
 				}
 				break;
-			case 'd': // Set nDimensions
-				if(sscanf(argv[arg+1], "%d", &nDimensions) == EOF || (nDimensions != 2 && nDimensions != 3)) {
-					printf("Number of dimensions must be 2 or 3.\n");
-					usage(argv[0]);
-				}
+			case 'k': // Set "Kitchen" mode (for Kitchen Budapest's animata)
+				kitchenMode = true;
 				break;
-			case 'n': // Set multiuser support
-				if(sscanf(argv[arg+1], "%d", &multiPlayer) == EOF) {
-					printf("Multi user option must be 0 or 1.\n");
-					usage(argv[0]);
-				}
+		    case 'r':
+				mirrorMode = false;
 				break;
 			default:
 				printf("Unrecognized option.\n");
@@ -394,6 +382,9 @@ int main(int argc, char **argv)
 	userGenerator.GetPoseDetectionCap().RegisterToPoseCallbacks(UserPose_PoseDetected, NULL, NULL, hPoseCallbacks);
 	userGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose);
 	userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL);
+
+	if (kitchenMode)
+		nDimensions = 2;
 
 	transmitSocket = new UdpTransmitSocket(IpEndpointName(ADDRESS, PORT));
 

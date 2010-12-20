@@ -367,7 +367,7 @@ int main(int argc, char **argv)
 				printf("Unrecognized option.\n");
 				usage(argv[0]);
 		}
-		if ( reuire_argument )
+		if ( require_argument )
 			arg += 2;
 		else
 			arg ++;

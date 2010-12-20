@@ -36,8 +36,8 @@
 
 
 #include <iostream>
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>
+#include <cstdlib>
 
 #include "osc/OscReceivedElements.h"
 #include "osc/OscPrintReceivedElements.h"
@@ -48,7 +48,7 @@
 
 class OscDumpPacketListener : public PacketListener{
 public:
-	virtual void ProcessPacket( const char *data, int size,
+	virtual void ProcessPacket( const char *data, int size, 
 			const IpEndpointName& remoteEndpoint )
 	{
 		std::cout << osc::ReceivedPacket( data, size );
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 
 	s.RunUntilSigInt();
 
-	std::cout << "finishing.\n";
+	std::cout << "finishing.\n";	
 
     return 0;
 }

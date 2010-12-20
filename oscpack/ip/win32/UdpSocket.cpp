@@ -37,7 +37,10 @@
 #include <algorithm>
 #include <stdexcept>
 #include <assert.h>
+
+#ifndef WINCE
 #include <signal.h>
+#endif
 
 #include "ip/NetworkingUtils.h"
 #include "ip/PacketListener.h"
@@ -282,7 +285,9 @@ extern "C" /*static*/ void InterruptSignalHandler( int );
 /*static*/ void InterruptSignalHandler( int )
 {
 	multiplexerInstanceToAbortWithSigInt_->AsynchronousBreak();
-	signal( SIGINT, SIG_DFL );
+#ifndef WINCE
+    signal( SIGINT, SIG_DFL );
+#endif
 }
 
 
@@ -297,8 +302,12 @@ class SocketReceiveMultiplexer::Implementation{
 
 	double GetCurrentTimeMs() const
 	{
+#ifndef WINCE
 		return timeGetTime(); // FIXME: bad choice if you want to run for more than 40 days
-	}
+#else
+        return 0;
+#endif
+    }
 
 public:
     Implementation()
@@ -503,9 +512,13 @@ void SocketReceiveMultiplexer::RunUntilSigInt()
 {
 	assert( multiplexerInstanceToAbortWithSigInt_ == 0 ); /* at present we support only one multiplexer instance running until sig int */
 	multiplexerInstanceToAbortWithSigInt_ = this;
-	signal( SIGINT, InterruptSignalHandler );
+#ifndef WINCE
+    signal( SIGINT, InterruptSignalHandler );
+#endif
 	impl_->Run();
+#ifndef WINCE
 	signal( SIGINT, SIG_DFL );
+#endif
 	multiplexerInstanceToAbortWithSigInt_ = 0;
 }
 

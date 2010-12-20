@@ -31,7 +31,7 @@
 
 #include <iostream>
 #include <iomanip>
-#include <string.h>
+#include <cstring>
 
 #include "osc/OscReceivedElements.h"
 #include "osc/OscPrintReceivedElements.h"
@@ -116,7 +116,7 @@ void test1()
 
         assertEqual( strcmp( m.AddressPattern(), "/test" ), 0 );
         assertEqual( strcmp( m.TypeTags(), "fiT" ), 0 );
-
+        
         ReceivedMessage::const_iterator i = m.ArgumentsBegin();
         ++i;
         ++i;
@@ -130,7 +130,7 @@ void test1()
         (void)n;
         bool b = (i++)->AsBool();
         (void)b;
-
+        
         i = m.ArgumentsBegin();
         bool exceptionThrown = false;
         try{
@@ -156,14 +156,14 @@ void test1()
         assertEqual( args.Eos(), false );
 
         float f;
-        long n;
+        int32 n;
         bool b;
         args >> f >> n >> b;
 
         (void) f;
         (void) n;
         (void) b;
-
+        
         assertEqual( args.Eos(), true );
 
     }catch( Exception& e ){
@@ -193,12 +193,12 @@ void test2()
 
         //            012301230 1 2 3 01 2 3
         TEST2_PRINT( "/no_args\0\0\0\0,\0\0\0" );
-
+        
         //            01230123 012 3 0 1 2 3
         TEST2_PRINT( "/an_int\0,i\0\0\0\0\0A" );
-        //            012301230 1 2 3 012 3 0 1 2 3
+        //            012301230 1 2 3 012 3 0 1 2 3 
         TEST2_PRINT( "/a_float\0\0\0\0,f\0\0\0\0\0\0" );
-        //            0123012301 2 3 012 3 012301230123
+        //            0123012301 2 3 012 3 012301230123 
         TEST2_PRINT( "/a_string\0\0\0,s\0\0hello world\0" );
         //            01230123 012 3 0 1 2 3  0  1  2  3
         TEST2_PRINT( "/a_blob\0,b\0\0\0\0\0\x4\x0\x1\x2\x3" );
@@ -209,17 +209,17 @@ void test2()
         TEST2_PRINT( "/a_timetag\0\0,t\0\0\0\0\0\0\0\0\0\x1" );
         //            0123012301 2 3 012 3 0 1 2 3 0 1 2 3
         TEST2_PRINT( "/a_double\0\0\0,d\0\0\0\0\0\0\0\0\0\0" );
-        //            0123012301 2 3 012 3 012301230123
+        //            0123012301 2 3 012 3 012301230123 
         TEST2_PRINT( "/a_symbol\0\0\0,S\0\0hello world\0" );
         //            01230123 012 3 0 1 2 3
         TEST2_PRINT( "/a_char\0,c\0\0\0\0\0A" );
-        //            012301230 1 2 3 012 3 0 1 2 3
+        //            012301230 1 2 3 012 3 0 1 2 3 
         TEST2_PRINT( "/a_color\0\0\0\0,r\0\0\0\0\0\0" );
         //            012301230123012 3 012 3 0 1 2 3
         TEST2_PRINT( "/a_midimessage\0\0,m\0\0\0\0\0\0" );
-        //            01230123 012 3
+        //            01230123 012 3 
         TEST2_PRINT( "/a_bool\0,T\0\0" );
-        //            01230123 012 3
+        //            01230123 012 3 
         TEST2_PRINT( "/a_bool\0,F\0\0" );
         //            01230 1 2 3 012 3
         TEST2_PRINT( "/Nil\0\0\0\0,N\0\0" );
@@ -227,7 +227,7 @@ void test2()
         TEST2_PRINT( "/Inf\0\0\0\0,I\0\0" );
 
         TEST2_PRINT( "/test\0\0\0,fiT\0\0\0\0\0\0\0\0\0\0\0A" );
-
+                                                        
         bool exceptionThrown = false;
         try{
             TEST2_PRINT( "/a_char\0,x\0\0\0\0\0A" ); // unknown type tag 'x'
@@ -235,7 +235,7 @@ void test2()
             exceptionThrown = true;
         }
         assertEqual( exceptionThrown, true );
-
+        
     }catch( Exception& e ){
         std::cout << "unexpected exception: " << e.what() << "\n";
         unexpectedExceptionCaught = true;
@@ -275,7 +275,7 @@ void test2()
         std::cout << m << "\n";\
         assertEqual( m.ArgumentsBegin()-> recieveGetter () , value );\
     }
-
+    
 #define TEST_PACK_UNPACK( addressPattern, argument, type, recieveGetter ) \
     {                                    \
         memset( buffer, 0x74, bufferSize );   \
@@ -403,7 +403,7 @@ int main(int argc, char* argv[])
 {
     (void)argc;
     (void)argv;
-
+    
     osc::RunUnitTests();
 }
 

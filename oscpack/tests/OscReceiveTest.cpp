@@ -29,9 +29,9 @@
 */
 #include "OscReceiveTest.h"
 
-#include <string.h>
-#include <stdlib.h>
 #include <iostream>
+#include <cstring>
+#include <cstdlib>
 
 #include "osc/OscReceivedElements.h"
 
@@ -47,7 +47,7 @@ protected:
     void ProcessMessage( const osc::ReceivedMessage& m, const IpEndpointName& remoteEndpoint )
     {
         // a more complex scheme involving std::map or some other method of
-        // processing address patterns could be used here
+        // processing address patterns could be used here 
 		// (see MessageMappingOscPacketListener.h for example). however, the main
         // purpose of this example is to illustrate and test different argument
         // parsing methods
@@ -57,7 +57,7 @@ protected:
             // examples below.
             ReceivedMessageArgumentStream args = m.ArgumentStream();
             ReceivedMessage::const_iterator arg = m.ArgumentsBegin();
-
+            
             if( strcmp( m.AddressPattern(), "/test1" ) == 0 ){
 
                 // example #1:
@@ -97,7 +97,7 @@ protected:
                 // use the argument iterator interface to query the types at
                 // runtime. this is more flexible that the argument stream
                 // interface, which requires each argument to have a fixed type
-
+                
                 if( arg->IsBool() ){
                     bool a = (arg++)->AsBoolUnchecked();
                     std::cout << "received '/test3' message with bool argument: "
@@ -117,11 +117,11 @@ protected:
                 }else{
                     std::cout << "received '/test3' message with unexpected argument type\n";
                 }
-
+                
                 if( arg != m.ArgumentsEnd() )
                     throw ExcessArgumentException();
 
-
+                    
             }else if( strcmp( m.AddressPattern(), "/no_arguments" ) == 0 ){
 
                 args >> osc::EndMessage;
@@ -218,7 +218,7 @@ protected:
             std::cout << "error while parsing message: "
                         << m.AddressPattern() << ": " << e.what() << "\n";
         }
-    }
+    }    
 };
 
 

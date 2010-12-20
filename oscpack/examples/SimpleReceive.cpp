@@ -4,6 +4,7 @@
 */
 
 #include <iostream>
+#include <cstring>
 
 #include "osc/OscReceivedElements.h"
 #include "osc/OscPacketListener.h"
@@ -22,7 +23,7 @@ protected:
             // example of parsing single messages. osc::OsckPacketListener
             // handles the bundle traversal.
             
-            if( strcmp( m.AddressPattern(), "/test1" ) == 0 ){
+            if( std::strcmp( m.AddressPattern(), "/test1" ) == 0 ){
                 // example #1 -- argument stream interface
                 osc::ReceivedMessageArgumentStream args = m.ArgumentStream();
                 bool a1;
@@ -34,7 +35,7 @@ protected:
                 std::cout << "received '/test1' message with arguments: "
                     << a1 << " " << a2 << " " << a3 << " " << a4 << "\n";
                 
-            }else if( strcmp( m.AddressPattern(), "/test2" ) == 0 ){
+            }else if( std::strcmp( m.AddressPattern(), "/test2" ) == 0 ){
                 // example #2 -- argument iterator interface, supports
                 // reflection for overloaded messages (eg you can call 
                 // (*arg)->IsBool() to check if a bool was passed etc).

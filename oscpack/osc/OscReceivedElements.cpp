@@ -132,7 +132,7 @@ int64 ToInt64( const char *p )
 #ifdef OSC_HOST_LITTLE_ENDIAN
     union{
         osc::int64 i;
-        char c[4];
+        char c[8];
     } u;
 
     u.c[0] = p[7];
@@ -156,7 +156,7 @@ uint64 ToUInt64( const char *p )
 #ifdef OSC_HOST_LITTLE_ENDIAN
     union{
         osc::uint64 i;
-        char c[4];
+        char c[8];
     } u;
 
     u.c[0] = p[7];
@@ -491,7 +491,7 @@ void ReceivedMessageArgumentIterator::Advance()
         case BLOB_TYPE_TAG:
             {
                 uint32 blobSize = ToUInt32( value_.argument_ );
-                value_.argument_ = value_.argument_ + 4 + RoundUp4( blobSize );
+                value_.argument_ = value_.argument_ + 4 + RoundUp4( (unsigned long)blobSize );
             }
             break;
 
@@ -631,7 +631,7 @@ void ReceivedMessage::Init( const char *message, unsigned long size )
                                 MalformedMessageException( "arguments exceed message size" );
                                 
                             uint32 blobSize = ToUInt32( argument );
-                            argument = argument + 4 + RoundUp4( blobSize );
+                            argument = argument + 4 + RoundUp4( (unsigned long)blobSize );
                             if( argument > end )
                                 MalformedMessageException( "arguments exceed message size" );
                         }

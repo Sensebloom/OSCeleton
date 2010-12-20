@@ -8,7 +8,7 @@ CXX = g++
 INCLUDES = -I./
 COPTS  = -Wall -O3 -fPIC
 CDEBUG = -Wall -g 
-CXXFLAGS = $(COPTS) $(INCLUDES) -D$(ENDIANESS) -fPIC
+CXXFLAGS = $(COPTS) $(INCLUDES) -D$(ENDIANESS)
 
 PREFIX = /usr/local
 INSTALL = /usr/bin/install -c

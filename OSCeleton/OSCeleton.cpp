@@ -136,7 +136,6 @@ int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 void genOscMsg(osc::OutboundPacketStream *p, char *name) {
 	*p << osc::BeginMessage( "/joint" );
 	*p << name;
-	int i;
 	if (multiPlayer)
 		*p << (int)jointCoords[0];
 	for (int i = 1; i < nDimensions+1; i++)

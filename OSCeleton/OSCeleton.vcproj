@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="C:\git\OSCeleton\OSCeleton\lib\oscpack\include;&quot;C:\Program Files (x86)\OpenNI\Include&quot;"
+				AdditionalIncludeDirectories="..\oscpack; &quot;$(OPEN_NI_INCLUDE)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,9 +61,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="winmm.lib openNI.lib oscpack.lib oscpackd.lib WSock32.Lib WS2_32.Lib"
+				AdditionalDependencies="OpenNI.lib WS2_32.Lib winmm.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="C:\git\OSCeleton\OSCeleton\lib;&quot;C:\Program Files (x86)\OpenNI\Lib&quot;;C:\git\OSCeleton\OSCeleton\lib\oscpack\lib\vs2008"
+				AdditionalLibraryDirectories="lib;&quot;$(OPEN_NI_LIB)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -117,7 +117,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="lib\oscpack\include; &quot;$(OPEN_NI_INCLUDE)&quot;"
+				AdditionalIncludeDirectories="..\oscpack; &quot;$(OPEN_NI_INCLUDE)&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -136,9 +136,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="OpenNI.lib oscpack.lib oscpackd.lib WS2_32.Lib winmm.lib"
+				AdditionalDependencies="OpenNI.lib WS2_32.Lib winmm.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="lib;lib\oscpack\lib\vs2008;&quot;$(OPEN_NI_LIB)&quot;"
+				AdditionalLibraryDirectories="lib;&quot;$(OPEN_NI_LIB)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -177,7 +177,35 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\oscpack\ip\IpEndpointName.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\oscpack\ip\win32\NetworkingUtils.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\OSCeleton.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\oscpack\osc\OscOutboundPacketStream.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\oscpack\osc\OscPrintReceivedElements.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\oscpack\osc\OscReceivedElements.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\oscpack\osc\OscTypes.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\oscpack\ip\win32\UdpSocket.cpp"
 				>
 			</File>
 		</Filter>

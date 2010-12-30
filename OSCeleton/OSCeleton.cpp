@@ -258,6 +258,18 @@ For a more detailed explanation of options consult the README file.\n\n",
 
 
 
+void checkRetVal(XnStatus nRetVal) {
+	if (nRetVal != XN_STATUS_OK) {
+		printf("There was a problem initializing kinect... Make sure you have\
+connected both usb and power cables and that the driver and OpenNI framework\
+are correctly installed.\n\n");
+		exit(1);
+	}
+}
+
+
+
+
 int main(int argc, char **argv)
 {
 	unsigned int arg = 1,
@@ -297,19 +309,19 @@ int main(int argc, char **argv)
 			case 'm': //Set multipliers
 				switch(argv[arg][2]) {
 					case 'x': // Set X multiplier
-						if(sscanf(argv[arg+1], "%f", &mult_x)  == EOF ) {
+						if(sscanf(argv[arg+1], "%lf", &mult_x)  == EOF ) {
 							printf("Bad X multiplier.\n");
 							usage(argv[0]);
 						}
 						break;
 					case 'y': // Set Y multiplier
-						if(sscanf(argv[arg+1], "%f", &mult_y)  == EOF ) {
+						if(sscanf(argv[arg+1], "%lf", &mult_y)  == EOF ) {
 							printf("Bad Y multiplier.\n");
 							usage(argv[0]);
 						}
 						break;
 					case 'z': // Set Z multiplier
-						if(sscanf(argv[arg+1], "%f", &mult_z)  == EOF ) {
+						if(sscanf(argv[arg+1], "%lf", &mult_z)  == EOF ) {
 							printf("Bad Z multiplier.\n");
 							usage(argv[0]);
 						}
@@ -322,19 +334,19 @@ int main(int argc, char **argv)
 			case 'o': //Set offsets
 				switch(argv[arg][2]) {
 					case 'x': // Set X offset
-						if(sscanf(argv[arg+1], "%f", &off_x)  == EOF ) {
+						if(sscanf(argv[arg+1], "%lf", &off_x)  == EOF ) {
 							printf("Bad X offset.\n");
 							usage(argv[0]);
 						}
 						break;
 					case 'y': // Set Y offset
-						if(sscanf(argv[arg+1], "%f", &off_y)  == EOF ) {
+						if(sscanf(argv[arg+1], "%lf", &off_y)  == EOF ) {
 							printf("Bad Y offset.\n");
 							usage(argv[0]);
 						}
 						break;
 					case 'z': // Set Z offset
-						if(sscanf(argv[arg+1], "%f", &off_z)  == EOF ) {
+						if(sscanf(argv[arg+1], "%lf", &off_z)  == EOF ) {
 							printf("Bad Z offset.\n");
 							usage(argv[0]);
 						}
@@ -360,6 +372,9 @@ int main(int argc, char **argv)
 			arg ++;
 	}
 
+	if (kitchenMode)
+		nDimensions = 2;
+
 	xn::Context context;
 	xn::DepthGenerator depth;
 	context.Init();
@@ -377,19 +392,24 @@ int main(int argc, char **argv)
 		nRetVal = userGenerator.Create(context);
 
 	XnCallbackHandle hUserCallbacks, hCalibrationCallbacks, hPoseCallbacks;
-	userGenerator.RegisterUserCallbacks(User_NewUser, User_LostUser, NULL, hUserCallbacks);
-	userGenerator.GetSkeletonCap().RegisterCalibrationCallbacks(UserCalibration_CalibrationStart, UserCalibration_CalibrationEnd, NULL, hCalibrationCallbacks);
-	userGenerator.GetPoseDetectionCap().RegisterToPoseCallbacks(UserPose_PoseDetected, NULL, NULL, hPoseCallbacks);
-	userGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose);
-	userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL);
-
-	if (kitchenMode)
-		nDimensions = 2;
+	checkRetVal(userGenerator.RegisterUserCallbacks(User_NewUser, User_LostUser, NULL, hUserCallbacks));
+	checkRetVal(userGenerator.GetSkeletonCap().RegisterCalibrationCallbacks(UserCalibration_CalibrationStart, UserCalibration_CalibrationEnd, NULL, hCalibrationCallbacks));
+	checkRetVal(userGenerator.GetPoseDetectionCap().RegisterToPoseCallbacks(UserPose_PoseDetected, NULL, NULL, hPoseCallbacks));
+	checkRetVal(userGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose));
+	checkRetVal(userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL));
 
 	transmitSocket = new UdpTransmitSocket(IpEndpointName(ADDRESS, PORT));
 
 	printf("Configured to send OSC messages to %s:%d\n", ADDRESS, PORT);
+	printf("Multipliers (x, y, z): %f, %f, %f\n", mult_x, mult_y, mult_z);
+	printf("Offsets (x, y, z): %f, %f, %f\n", off_x, off_y, off_z);
+	printf("Kitchen mode: ");
+	if (kitchenMode)
+		printf("enabled\n");
+	else
+		printf("disabled\n");
 	printf("Initialized Kinect, looking for users...\n");
+
 	context.StartGeneratingAll();
 
 	while (true) {

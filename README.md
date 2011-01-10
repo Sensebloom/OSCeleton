@@ -14,20 +14,18 @@ How do I use it?
 ----------------
 
 ### First you need to install the OpenNI driver, framework, and middleware
-#### Windows
+#### Windows / Linux / Mac OSX
 Get avin's hacked Primesense PSDK driver for kinect:
 [https://github.com/avin2/SensorKinect](https://github.com/avin2/SensorKinect)
 Folow his instructions for installing the OpenNI framwork, the driver,
 and the NITE middleware.
 
-#### Linux
-There's a great post about how to get OpenNI working in linux  here:
-[http://www.keyboardmods.com/2010/12/howto-kinect-openninite-skeleton.html](http://www.keyboardmods.com/2010/12/howto-kinect-openninite-skeleton.html)
-
-#### After OpenNI is working
+#### After OpenNI / NITE is working
 Then you can run one of the precompiled binaries in the "bin"
-directory or compile your own: Just type "make" on linux or osx; on
-windows you can use the VC++ express .sln file.
+directory or compile your own:
+- on Linux: "make"
+- on OSX: "make osceleton-osx"
+- on windows: you can use the VC++ express .sln file
 
 If you run the executable without any arguments, it will send the OSC
 messagens in the default format to localhost on port 7110.

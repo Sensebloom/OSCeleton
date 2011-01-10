@@ -1,0 +1,5 @@
+OSX Support
+Use distance of joints to affect the layer's Z-index in animata. Maybe add options to send /layerpos messages based on some of the joints or based on the Z coords?
+Option to user polar coordinates instead of cartesian coordinates (for Ableton Live).
+Noise filtering (to reduce skeleton jerkyness).
+Add a message format that is easier to use in Quartz composer (/joint/head/1/pos f f f).

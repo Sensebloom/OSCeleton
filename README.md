@@ -27,6 +27,13 @@ directory or compile your own:
 - on OSX: "make osceleton-osx"
 - on windows: you can use the VC++ express .sln file
 
+> NOTE FOR MAC USERS: You must run OSCeleton from the terminal, or
+> there will be an error about not being able to run a classic mode
+> application (I still don't know the cause for this since I'm not a
+> mac user).
+> Also you need to have GCC4.0, since 4.2 makes oscpack behave weird
+> and send wrong messages / crash the app.
+
 If you run the executable without any arguments, it will send the OSC
 messagens in the default format to localhost on port 7110.
 To learn about the OSC message format, continue reading below or check
@@ -128,7 +135,7 @@ excellent Kitchen Budapest animata skeletal animation software.
 Other
 -----
 
-### Death threats and other stuff can be sent to:
-<info@sensebloom.com>
+### For death threats and other stuff, come join the fun in our [google
+group](http://groups.google.com/group/osceleton)!
 
 Have fun!

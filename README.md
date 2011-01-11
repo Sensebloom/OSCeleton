@@ -26,17 +26,14 @@ directory or compile your own:
 
 on Linux:
     make
+
 on OSX you can use the precompiled binary in bin/OSX or compile with:
     make osceleton-osx
+> NOTE FOR MAC USERS: You must run OSCeleton from the terminal or it
+> will not run correctly.
+
 on windows: you can use the precompiled binary in bin\win32 or use the
 VC++ express .sln file.
-
-> NOTE FOR MAC USERS: You must run OSCeleton from the terminal, or
-> there will be an error about not being able to run a classic mode
-> application (I still don't know the cause for this since I'm not a
-> mac user).
-> Also you need to have GCC4.0, since 4.2 makes oscpack behave weird
-> and send wrong messages / crash the app.
 
 If you run the executable without any arguments, it will send the OSC
 messagens in the default format to localhost on port 7110.

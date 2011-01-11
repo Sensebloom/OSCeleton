@@ -23,9 +23,13 @@ and the NITE middleware.
 #### After OpenNI / NITE is working
 Then you can run one of the precompiled binaries in the "bin"
 directory or compile your own:
-- on Linux: "make"
-- on OSX: "make osceleton-osx"
-- on windows: you can use the VC++ express .sln file
+
+on Linux:
+    make
+on OSX you can use the precompiled binary in bin/OSX or compile with:
+    make osceleton-osx
+on windows: you can use the precompiled binary in bin\win32 or use the
+VC++ express .sln file.
 
 > NOTE FOR MAC USERS: You must run OSCeleton from the terminal, or
 > there will be an error about not being able to run a classic mode

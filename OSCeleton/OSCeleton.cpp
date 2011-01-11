@@ -35,7 +35,7 @@ char osc_buffer[OUTPUT_BUFFER_SIZE];
 UdpTransmitSocket *transmitSocket;
 
 char tmp[50];
-float jointCoords[4];
+float jointCoords[4]; //Fix for MacOSX's crazy gcc (was overwriting userGenerator with the last coord apparently...)
 
 //Multipliers for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.

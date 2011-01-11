@@ -135,7 +135,7 @@ excellent Kitchen Budapest animata skeletal animation software.
 Other
 -----
 
-### For death threats and other stuff, come join the fun in our [google
-group](http://groups.google.com/group/osceleton)!
+### For death threats and other stuff, come join the fun in our
+    [google group](http://groups.google.com/group/osceleton)!
 
 Have fun!

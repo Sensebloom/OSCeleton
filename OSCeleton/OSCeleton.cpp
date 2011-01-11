@@ -35,7 +35,7 @@ char osc_buffer[OUTPUT_BUFFER_SIZE];
 UdpTransmitSocket *transmitSocket;
 
 char tmp[50];
-float jointCoords[3];
+float jointCoords[4];
 
 //Multipliers for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.

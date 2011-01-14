@@ -141,7 +141,7 @@ int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 		return -1;
 
 	jointCoords[0] = player;
-	jointCoords[1] = off_x + (mult_x * (1280 - joint.position.X) / 2560); //Normalize coords to 0..1 interval
+	jointCoords[1] = off_x + (mult_x * joint.position.X / 1280); //Normalize coords to 0..1 interval
 	jointCoords[2] = off_y + (mult_y * (1280 - joint.position.Y) / 2560); //Normalize coords to 0..1 interval
 	jointCoords[3] = off_z + (mult_z * joint.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
 	return 0;
@@ -262,7 +262,7 @@ Example: %s -a 127.0.0.1 -p 7110 -d 3 -n 1 -mx 1 -my 1 -mz 1 -ox 0 -oy 0 -oz 0\n
 Options:\n\
   -a\t Address to send OSC packets to.\n\
   -p\t Port to send OSC packets to.\n\
-  -r\t Reverse image (disable \"mirror mode\"). NOT WORKING YET.\n\
+  -r\t Reverse image (disable mirror mode).\n\
   -mx\t Multiplier for X coordinates.\n\
   -my\t Multiplier for Y coordinates.\n\
   -mz\t Multiplier for Z coordinates.\n\
@@ -417,6 +417,7 @@ int main(int argc, char **argv)
 	checkRetVal(userGenerator.GetPoseDetectionCap().RegisterToPoseCallbacks(UserPose_PoseDetected, NULL, NULL, hPoseCallbacks));
 	checkRetVal(userGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose));
 	checkRetVal(userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL));
+	xnSetMirror(depth, mirrorMode);
 
 	transmitSocket = new UdpTransmitSocket(IpEndpointName(ADDRESS, PORT));
 

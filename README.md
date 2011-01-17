@@ -24,11 +24,9 @@ and the NITE middleware.
 Then you can run one of the precompiled binaries in the "bin"
 directory or compile your own:
 
-on Linux:
+on Linux or Mac OSX:
     make
 
-on OSX you can use the precompiled binary in bin/OSX or compile with:
-    make osceleton-osx
 > NOTE FOR MAC USERS: You must run OSCeleton from the terminal or it
 > will not run correctly.
 
@@ -64,30 +62,23 @@ OSC Message format
 
 ### New user detected - no skeleton available yet. This is a good time
 ### for you to ask the user to do the calibration pose:
-
     Address pattern: "/new_user"
     Type tag: "i"
     i: A numeric ID attributed to the new user.
 
-
 ### New skeleton detected - The calibration was finished successfully,
 ### joint coordinate messages for this user will be incoming soon ;):
-
     Address pattern: "/new_skel"
     Type tag: "i"
     i: ID of the user whose skeleton is detected.
 
-
 ### Lost user - we have lost the user with the following id:
-
     Address pattern: "/lost_user"
     Type tag: "i"
     i: The ID of the lost user. (This ID will be free for reuse from now on)
 
-
 ### Joint message - message with the coordinates of each skeleton
 ### joint:
-
     Address pattern: "/joint"
     Type tag: "sifff"
     s: Joint name, check out the full list of joints below.
@@ -96,10 +87,28 @@ OSC Message format
     f: Y coordinate of joint in interval [0.0, 1.0]
     f: Z coordinate of joint in interval [0.0, 7.0]
 
-If you use "-k" option, the typetag will be "sff", and no user ID or Z
-coordinate will be sent. new_user, new_skel and lost_user messages
-will not be sent either. This is used for compatibility with the
-excellent Kitchen Budapest animata skeletal animation software.
+#### NOTE: Kitchen mode
+To send OSC messages compatible with the awesome animata skeletal
+animation software use the "-k" option. The messages will have the
+following format:
+    Address pattern: "/joint"
+    Type tag: "sff"
+    s: joint name concatenated with user id (ex: "l_shoulder0")
+    f: X coordinate of joint in interval [0.0, 1.0]
+    f: Y coordinate of joint in interval [0.0, 1.0]
+In this mode new_user, new_skel and lost_user messages
+will not be sent.
+
+#### NOTE: Quartz Composer mode
+You can enable a message format that is more friendly to Quartz
+composer with the "-q" option. The messages will have the following format:
+    Address pattern: "/joint/name/id"
+    Type tag: "fff"
+    f: X coordinate of joint in interval [0.0, 1.0]
+    f: Y coordinate of joint in interval [0.0, 1.0]
+    f: Z coordinate of joint in interval [0.0, 7.0]
+Example (left knee of user 0):
+    /joint/l_knee/0 0.08823146 0.5761504 0.44253197
 
 
 ### Full list of joints
@@ -136,6 +145,6 @@ excellent Kitchen Budapest animata skeletal animation software.
 Other
 -----
 
-### For death threats and other stuff, come join the fun in our [google group](http://groups.google.com/group/osceleton)!
+### For feature request, reporting bugs, or general osceleton discussion, come join the fun in our [google group](http://groups.google.com/group/osceleton)!
 
 Have fun!

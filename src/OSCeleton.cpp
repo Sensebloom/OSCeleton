@@ -34,8 +34,8 @@ int PORT = 7110;
 char osc_buffer[OUTPUT_BUFFER_SIZE];
 UdpTransmitSocket *transmitSocket;
 
-char tmp[50];
-float jointCoords[4]; //Fix for MacOSX's crazy gcc (was overwriting userGenerator with the last coord apparently...)
+char tmp[50];         //Temp buffer for OSC address pattern
+float jointCoords[4]; //Length must be 4 instead of 3 due to MacOSX's crazy gcc (it overwrites userGenerator with the last coord apparently...)
 
 //Multipliers for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.
@@ -52,6 +52,8 @@ double off_z = 0.0;
 bool kitchenMode = false;
 bool mirrorMode = true;
 int nDimensions = 3;
+
+void (*oscFunc)(osc::OutboundPacketStream* , char*) = NULL;
 
 xn::UserGenerator userGenerator;
 XnChar g_strPose[20] = "";
@@ -149,11 +151,23 @@ int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 
 
 
+// Generate OSC message with default format
 void genOscMsg(osc::OutboundPacketStream *p, char *name) {
 	*p << osc::BeginMessage( "/joint" );
 	*p << name;
 	if (!kitchenMode)
 		*p << (int)jointCoords[0];
+	for (int i = 1; i < nDimensions+1; i++)
+		*p << jointCoords[i];
+	*p << osc::EndMessage;
+}
+
+
+
+// Generate OSC message with Quartz Composer format - based on Steve Elbows's code ;)
+void genQCMsg(osc::OutboundPacketStream *p, char *name) {
+	sprintf(tmp, "/joint/%s/%d", name, (int)jointCoords[0]);
+	*p << osc::BeginMessage(tmp);
 	for (int i = 1; i < nDimensions+1; i++)
 		*p << jointCoords[i];
 	*p << osc::EndMessage;
@@ -173,76 +187,76 @@ void sendOSC(const xn::DepthMetaData& dmd)
 			p << osc::BeginBundleImmediate;
 
 			if (jointPos(aUsers[i], XN_SKEL_HEAD) == 0) {
-				genOscMsg(&p, "head");
+				oscFunc(&p, "head");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_NECK) == 0) {
-				genOscMsg(&p, "neck");
+				oscFunc(&p, "neck");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_COLLAR) == 0) {
-				genOscMsg(&p, "l_collar");
+				oscFunc(&p, "l_collar");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_SHOULDER) == 0) {
-				genOscMsg(&p, "l_shoulder");
+				oscFunc(&p, "l_shoulder");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_ELBOW) == 0) {
-				genOscMsg(&p, "l_elbow");
+				oscFunc(&p, "l_elbow");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_WRIST) == 0) {
-				genOscMsg(&p, "l_wrist");
+				oscFunc(&p, "l_wrist");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_HAND) == 0) {
-				genOscMsg(&p, "l_hand");
+				oscFunc(&p, "l_hand");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_FINGERTIP) == 0) {
-				genOscMsg(&p, "l_fingertip");
+				oscFunc(&p, "l_fingertip");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_COLLAR) == 0) {
-				genOscMsg(&p, "r_collar");
+				oscFunc(&p, "r_collar");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_SHOULDER) == 0) {
-				genOscMsg(&p, "r_shoulder");
+				oscFunc(&p, "r_shoulder");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_ELBOW) == 0) {
-				genOscMsg(&p, "r_elbow");
+				oscFunc(&p, "r_elbow");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_WRIST) == 0) {
-				genOscMsg(&p, "r_wrist");
+				oscFunc(&p, "r_wrist");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_HAND) == 0) {
-				genOscMsg(&p, "r_hand");
+				oscFunc(&p, "r_hand");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_FINGERTIP) == 0) {
-				genOscMsg(&p, "r_fingertip");
+				oscFunc(&p, "r_fingertip");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_TORSO) == 0) {
-				genOscMsg(&p, "torso");
+				oscFunc(&p, "torso");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_WAIST) == 0) {
-				genOscMsg(&p, "waist");
+				oscFunc(&p, "waist");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_HIP) == 0) {
-				genOscMsg(&p, "l_hip");
+				oscFunc(&p, "l_hip");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_KNEE) == 0) {
-				genOscMsg(&p, "l_knee");
+				oscFunc(&p, "l_knee");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_ANKLE) == 0) {
-				genOscMsg(&p, "l_ankle");
+				oscFunc(&p, "l_ankle");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_FOOT) == 0) {
-				genOscMsg(&p, "l_foot");
+				oscFunc(&p, "l_foot");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_HIP) == 0) {
-				genOscMsg(&p, "r_hip");
+				oscFunc(&p, "r_hip");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_KNEE) == 0) {
-				genOscMsg(&p, "r_knee");
+				oscFunc(&p, "r_knee");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_ANKLE) == 0) {
-				genOscMsg(&p, "r_ankle");
+				oscFunc(&p, "r_ankle");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_FOOT) == 0) {
-				genOscMsg(&p, "r_foot");
+				oscFunc(&p, "r_foot");
 			}
 
 			p << osc::EndBundle;
@@ -270,6 +284,7 @@ Options:\n\
   -oy\t Offset to add to Y coordinates.\n\
   -oz\t Offset to add to Z coordinates.\n\
   -k\t Enable \"Kitchen\" mode (Animata compatibility mode).\n\
+  -q\t Enable Quartz Composer OSC format.\n\
   -h\t Show help.\n\n\
 For a more detailed explanation of options consult the README file.\n\n",
 		   name, name);
@@ -286,7 +301,6 @@ are correctly installed.\n\n");
 		exit(1);
 	}
 }
-
 
 
 
@@ -318,7 +332,6 @@ int main(int argc, char **argv)
 				break;
 			case 'a': //Set ip address
 				ADDRESS = argv[arg+1];
-				arg += 2;
 				break;
 			case 'p': //Set port
 				if(sscanf(argv[arg+1], "%d", &PORT) == EOF ) {
@@ -379,6 +392,9 @@ int main(int argc, char **argv)
 			case 'k': // Set "Kitchen" mode (for Kitchen Budapest's animata)
 				kitchenMode = true;
 				break;
+			case 'q': // Set Quartz Composer mode
+				oscFunc = &genQCMsg;
+				break;
 		    case 'r':
 				mirrorMode = false;
 				break;
@@ -394,6 +410,8 @@ int main(int argc, char **argv)
 
 	if (kitchenMode)
 		nDimensions = 2;
+	if (oscFunc == NULL)
+		oscFunc = &genOscMsg;
 
 	xn::Context context;
 	xn::DepthGenerator depth;
@@ -424,13 +442,16 @@ int main(int argc, char **argv)
 	printf("Configured to send OSC messages to %s:%d\n", ADDRESS, PORT);
 	printf("Multipliers (x, y, z): %f, %f, %f\n", mult_x, mult_y, mult_z);
 	printf("Offsets (x, y, z): %f, %f, %f\n", off_x, off_y, off_z);
-	printf("Kitchen mode: ");
-	if (kitchenMode)
-		printf("enabled\n");
-	else
-		printf("disabled\n");
-	printf("Initialized Kinect, looking for users...\n");
 
+	printf("OSC Message format: ");
+	if (kitchenMode)
+		printf("Kitchen (Animata compatibility)\n");
+	else if (oscFunc == genQCMsg)
+		printf("Quartz Composer\n");
+	else
+		printf("Default OSCeleton format\n");
+
+	printf("Initialized Kinect, looking for users...\n\n");
 	context.StartGeneratingAll();
 
 	while (true) {

@@ -1,5 +1,7 @@
 Use distance of joints to affect the layer's Z-index in animata. Maybe add options to send /layerpos messages based on some of the joints or based on the Z coords?
 Option to use skeletal hierarchy with limb rotations instead of cartesian coordinates (for Ableton Live, blender, exporting to BVH).
 Noise filtering (to reduce skeleton jerkyness).
-Add a message format that is easier to use in Quartz composer (/joint/head/1/pos f f f).
+Export to BVH animation file format.
+Save and replay from ONI files (also for BVH in the future).
 Viewer window option (unless we can get OSX to allow 2 processes to use the same usb device simultaneously)
+Add alternative QC format (hierarchy format).

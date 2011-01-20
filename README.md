@@ -77,8 +77,7 @@ OSC Message format
     Type tag: "i"
     i: The ID of the lost user. (This ID will be free for reuse from now on)
 
-### Joint message - message with the coordinates of each skeleton
-### joint:
+### Joint message - message with the coordinates of each skeleton joint:
     Address pattern: "/joint"
     Type tag: "sifff"
     s: Joint name, check out the full list of joints below.

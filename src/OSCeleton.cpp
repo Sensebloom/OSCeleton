@@ -18,12 +18,13 @@
 
 ***********************************************************************/
 
-#include <stdio.h>
+#include <cstdio>
+#include <csignal>
 
 #include <XnCppWrapper.h>
 
-#include "ip/UdpSocket.h"
-#include "osc/OscOutboundPacketStream.h"
+#include <ip/UdpSocket.h>
+#include <osc/OscOutboundPacketStream.h>
 
 
 
@@ -35,7 +36,7 @@ char osc_buffer[OUTPUT_BUFFER_SIZE];
 UdpTransmitSocket *transmitSocket;
 
 char tmp[50];         //Temp buffer for OSC address pattern
-float jointCoords[4]; //Length must be 4 instead of 3 due to MacOSX's crazy gcc (it overwrites userGenerator with the last coord apparently...)
+double jointCoords[3];
 
 //Multipliers for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.
@@ -51,12 +52,15 @@ double off_z = 0.0;
 
 bool kitchenMode = false;
 bool mirrorMode = true;
+bool play = false;
+bool record = false;
 int nDimensions = 3;
 
 void (*oscFunc)(osc::OutboundPacketStream* , char*) = NULL;
 
+xn::Context context;
 xn::UserGenerator userGenerator;
-XnChar g_strPose[20] = "";
+XnChar g_strPose[20];
 
 
 
@@ -158,7 +162,7 @@ void genOscMsg(osc::OutboundPacketStream *p, char *name) {
 	if (!kitchenMode)
 		*p << (int)jointCoords[0];
 	for (int i = 1; i < nDimensions+1; i++)
-		*p << jointCoords[i];
+		*p << (float)jointCoords[i];
 	*p << osc::EndMessage;
 }
 
@@ -169,7 +173,7 @@ void genQCMsg(osc::OutboundPacketStream *p, char *name) {
 	sprintf(tmp, "/joint/%s/%d", name, (int)jointCoords[0]);
 	*p << osc::BeginMessage(tmp);
 	for (int i = 1; i < nDimensions+1; i++)
-		*p << jointCoords[i];
+		*p << (float)jointCoords[i];
 	*p << osc::EndMessage;
 }
 
@@ -274,18 +278,20 @@ Example: %s -a 127.0.0.1 -p 7110 -d 3 -n 1 -mx 1 -my 1 -mz 1 -ox 0 -oy 0 -oz 0\n
 (The above example corresponds to the defaults)\n\
 \n\
 Options:\n\
-  -a\t Address to send OSC packets to.\n\
-  -p\t Port to send OSC packets to.\n\
-  -r\t Reverse image (disable mirror mode).\n\
-  -mx\t Multiplier for X coordinates.\n\
-  -my\t Multiplier for Y coordinates.\n\
-  -mz\t Multiplier for Z coordinates.\n\
-  -ox\t Offset to add to X coordinates.\n\
-  -oy\t Offset to add to Y coordinates.\n\
-  -oz\t Offset to add to Z coordinates.\n\
-  -k\t Enable \"Kitchen\" mode (Animata compatibility mode).\n\
-  -q\t Enable Quartz Composer OSC format.\n\
-  -h\t Show help.\n\n\
+  -a <addr>\t Address to send OSC packets to (default: localhost).\n\
+  -p <port>\t Port to send OSC packets to (default: 7110).\n\
+  -r\t\t Reverse image (disable mirror mode).\n\
+  -mx <n>\t Multiplier for X coordinates.\n\
+  -my <n>\t Multiplier for Y coordinates.\n\
+  -mz <n>\t Multiplier for Z coordinates.\n\
+  -ox <n>\t Offset to add to X coordinates.\n\
+  -oy <n>\t Offset to add to Y coordinates.\n\
+  -oz <n>\t Offset to add to Z coordinates.\n\
+  -k\t\t Enable \"Kitchen\" mode (Animata compatibility mode).\n\
+  -q\t\t Enable Quartz Composer OSC format.\n\
+  -s <file>\t Save to file (only .oni supported at the moment).\n\
+  -i <file>\t Play from file (only .oni supported at the moment).\n\
+  -h\t\t Show help.\n\n\
 For a more detailed explanation of options consult the README file.\n\n",
 		   name, name);
 	exit(1);
@@ -304,10 +310,26 @@ are correctly installed.\n\n");
 
 
 
+void terminate(int ignored) {
+	context.Shutdown();
+	delete transmitSocket;
+	exit(0);
+}
+
+
+
 int main(int argc, char **argv)
 {
 	unsigned int arg = 1,
 				 require_argument = 0;
+	xn::DepthGenerator depth;
+	XnMapOutputMode mapMode;
+	XnStatus nRetVal = XN_STATUS_OK;
+	XnCallbackHandle hUserCallbacks, hCalibrationCallbacks, hPoseCallbacks;
+	xn::Recorder recorder;
+
+	context.Init();
+
 	while ((arg < argc) && (argv[arg][0] == '-')) {
 		switch (argv[arg][1]) {
 			case 'a':
@@ -327,80 +349,91 @@ int main(int argc, char **argv)
 		}
 
 		switch (argv[arg][1]) {
-			case 'h':
+		case 'h':
+			usage(argv[0]);
+			break;
+		case 'a': //Set ip address
+			ADDRESS = argv[arg+1];
+			break;
+		case 'p': //Set port
+			if(sscanf(argv[arg+1], "%d", &PORT) == EOF ) {
+				printf("Bad port number given.\n");
 				usage(argv[0]);
-				break;
-			case 'a': //Set ip address
-				ADDRESS = argv[arg+1];
-				break;
-			case 'p': //Set port
-				if(sscanf(argv[arg+1], "%d", &PORT) == EOF ) {
-					printf("Bad port number given.\n");
+			}
+			break;
+		case 's':
+			checkRetVal(recorder.Create(context));
+			checkRetVal(recorder.SetDestination(XN_RECORD_MEDIUM_FILE, argv[arg+1]));
+			record = true;
+			arg++;
+			break;
+		case 'i':
+			checkRetVal(context.OpenFileRecording(argv[arg+1]));
+			play = true;
+			arg++;
+			break;
+		case 'm': //Set multipliers
+			switch(argv[arg][2]) {
+			case 'x': // Set X multiplier
+				if(sscanf(argv[arg+1], "%lf", &mult_x)  == EOF ) {
+					printf("Bad X multiplier.\n");
 					usage(argv[0]);
 				}
 				break;
-			case 'm': //Set multipliers
-				switch(argv[arg][2]) {
-					case 'x': // Set X multiplier
-						if(sscanf(argv[arg+1], "%lf", &mult_x)  == EOF ) {
-							printf("Bad X multiplier.\n");
-							usage(argv[0]);
-						}
-						break;
-					case 'y': // Set Y multiplier
-						if(sscanf(argv[arg+1], "%lf", &mult_y)  == EOF ) {
-							printf("Bad Y multiplier.\n");
-							usage(argv[0]);
-						}
-						break;
-					case 'z': // Set Z multiplier
-						if(sscanf(argv[arg+1], "%lf", &mult_z)  == EOF ) {
-							printf("Bad Z multiplier.\n");
-							usage(argv[0]);
-						}
-						break;
-					default:
-						printf("Bad multiplier option given.\n");
-						usage(argv[0]);
+			case 'y': // Set Y multiplier
+				if(sscanf(argv[arg+1], "%lf", &mult_y)  == EOF ) {
+					printf("Bad Y multiplier.\n");
+					usage(argv[0]);
 				}
 				break;
-			case 'o': //Set offsets
-				switch(argv[arg][2]) {
-					case 'x': // Set X offset
-						if(sscanf(argv[arg+1], "%lf", &off_x)  == EOF ) {
-							printf("Bad X offset.\n");
-							usage(argv[0]);
-						}
-						break;
-					case 'y': // Set Y offset
-						if(sscanf(argv[arg+1], "%lf", &off_y)  == EOF ) {
-							printf("Bad Y offset.\n");
-							usage(argv[0]);
-						}
-						break;
-					case 'z': // Set Z offset
-						if(sscanf(argv[arg+1], "%lf", &off_z)  == EOF ) {
-							printf("Bad Z offset.\n");
-							usage(argv[0]);
-						}
-						break;
-					default:
-						printf("Bad offset option given.\n");
-						usage(argv[0]);
+			case 'z': // Set Z multiplier
+				if(sscanf(argv[arg+1], "%lf", &mult_z)  == EOF ) {
+					printf("Bad Z multiplier.\n");
+					usage(argv[0]);
 				}
-				break;
-			case 'k': // Set "Kitchen" mode (for Kitchen Budapest's animata)
-				kitchenMode = true;
-				break;
-			case 'q': // Set Quartz Composer mode
-				oscFunc = &genQCMsg;
-				break;
-		    case 'r':
-				mirrorMode = false;
 				break;
 			default:
-				printf("Unrecognized option.\n");
+				printf("Bad multiplier option given.\n");
 				usage(argv[0]);
+			}
+			break;
+		case 'o': //Set offsets
+			switch(argv[arg][2]) {
+			case 'x': // Set X offset
+				if(sscanf(argv[arg+1], "%lf", &off_x)  == EOF ) {
+					printf("Bad X offset.\n");
+					usage(argv[0]);
+				}
+				break;
+			case 'y': // Set Y offset
+				if(sscanf(argv[arg+1], "%lf", &off_y)  == EOF ) {
+					printf("Bad Y offset.\n");
+					usage(argv[0]);
+				}
+				break;
+			case 'z': // Set Z offset
+				if(sscanf(argv[arg+1], "%lf", &off_z)  == EOF ) {
+					printf("Bad Z offset.\n");
+					usage(argv[0]);
+				}
+				break;
+			default:
+				printf("Bad offset option given.\n");
+				usage(argv[0]);
+			}
+			break;
+		case 'k': // Set "Kitchen" mode (for Kitchen Budapest's animata)
+			kitchenMode = true;
+			break;
+		case 'q': // Set Quartz Composer mode
+			oscFunc = &genQCMsg;
+			break;
+		case 'r':
+			mirrorMode = false;
+			break;
+		default:
+			printf("Unrecognized option.\n");
+			usage(argv[0]);
 		}
 		if ( require_argument )
 			arg += 2;
@@ -411,25 +444,21 @@ int main(int argc, char **argv)
 	if (kitchenMode)
 		nDimensions = 2;
 	if (oscFunc == NULL)
-		oscFunc = &genOscMsg;
+		oscFunc = genOscMsg;
 
-	xn::Context context;
-	xn::DepthGenerator depth;
-	context.Init();
 	depth.Create(context);
 
-	XnMapOutputMode mapMode;
-	mapMode.nXRes = XN_VGA_X_RES;
-	mapMode.nYRes = XN_VGA_Y_RES;
-	mapMode.nFPS = 30;
-	depth.SetMapOutputMode(mapMode);
+	if (!play) {
+		mapMode.nXRes = XN_VGA_X_RES;
+		mapMode.nYRes = XN_VGA_Y_RES;
+		mapMode.nFPS = 30;
+		depth.SetMapOutputMode(mapMode);
+	}
 
-	XnStatus nRetVal = XN_STATUS_OK;
 	nRetVal = context.FindExistingNode(XN_NODE_TYPE_USER, userGenerator);
 	if (nRetVal != XN_STATUS_OK)
 		nRetVal = userGenerator.Create(context);
 
-	XnCallbackHandle hUserCallbacks, hCalibrationCallbacks, hPoseCallbacks;
 	checkRetVal(userGenerator.RegisterUserCallbacks(User_NewUser, User_LostUser, NULL, hUserCallbacks));
 	checkRetVal(userGenerator.GetSkeletonCap().RegisterCalibrationCallbacks(UserCalibration_CalibrationStart, UserCalibration_CalibrationEnd, NULL, hCalibrationCallbacks));
 	checkRetVal(userGenerator.GetPoseDetectionCap().RegisterToPoseCallbacks(UserPose_PoseDetected, NULL, NULL, hPoseCallbacks));
@@ -438,6 +467,8 @@ int main(int argc, char **argv)
 	xnSetMirror(depth, mirrorMode);
 
 	transmitSocket = new UdpTransmitSocket(IpEndpointName(ADDRESS, PORT));
+	signal(SIGTERM, terminate);
+	signal(SIGINT, terminate);
 
 	printf("Configured to send OSC messages to %s:%d\n", ADDRESS, PORT);
 	printf("Multipliers (x, y, z): %f, %f, %f\n", mult_x, mult_y, mult_z);
@@ -454,16 +485,18 @@ int main(int argc, char **argv)
 	printf("Initialized Kinect, looking for users...\n\n");
 	context.StartGeneratingAll();
 
+	if (record)
+		recorder.AddNodeToRecording(depth, XN_CODEC_16Z_EMB_TABLES);
+
 	while (true) {
 		// Read next available data
 		context.WaitAnyUpdateAll();
 		// Process the data
-		xn::DepthMetaData depthMD;
+		xn::DepthMetaData depthMD; //Somehow if i take this out of the while loop we get segfaults... :(
 		depth.GetMetaData(depthMD);
 		sendOSC(depthMD);
 	}
 
-	context.Shutdown();
-	return 0;
+	terminate(0);
 }
 

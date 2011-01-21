@@ -106,8 +106,8 @@ composer with the "-q" option. The messages will have the following format:
     f: X coordinate of joint in interval [0.0, 1.0]
     f: Y coordinate of joint in interval [0.0, 1.0]
     f: Z coordinate of joint in interval [0.0, 7.0]
-Example (left knee of user 0):
-    /joint/l_knee/0 0.08823146 0.5761504 0.44253197
+Example (left knee of user 3):
+    /joint/l_knee/3 0.08823146 0.5761504 0.44253197
 
 
 ### Full list of joints

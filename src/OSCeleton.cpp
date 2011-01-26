@@ -52,9 +52,11 @@ double off_y = 0.0;
 double off_z = 0.0;
 
 bool kitchenMode = false;
-bool mirrorMode = false;
+bool mirrorMode = true;
 bool play = false;
 bool record = false;
+bool sendRot = false;
+bool filter = false;
 int nDimensions = 3;
 
 void (*oscFunc)(osc::OutboundPacketStream* , char*) = NULL;
@@ -141,16 +143,20 @@ void XN_CALLBACK_TYPE UserCalibration_CalibrationEnd(xn::SkeletonCapability& cap
 
 
 int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
-	XnSkeletonJointPosition joint;
-	userGenerator.GetSkeletonCap().GetSkeletonJointPosition(player, eJoint, joint);
+	XnSkeletonJointTransformation joint;
+	userGenerator.GetSkeletonCap().GetSkeletonJoint(player, eJoint, joint);
 
-	if (joint.fConfidence < 0.5)
+	if ((joint.position.fConfidence < 0.5))// || (joint.orientation.fConfidence < 0.5))
 		return -1;
 
 	userID = player;
-	jointCoords[0] = off_x + (mult_x * (1280 - joint.position.X) / 2560); //Normalize coords to 0..1 interval
-	jointCoords[1] = off_y + (mult_y * (1280 - joint.position.Y) / 2560); //Normalize coords to 0..1 interval
-	jointCoords[2] = off_z + (mult_z * joint.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
+	jointCoords[0] = off_x + (mult_x * (1280 + joint.position.position.X) / 2560); //Normalize coords to 0..1 interval
+	jointCoords[1] = off_y + (mult_y * (1280 - joint.position.position.Y) / 2560); //Normalize coords to 0..1 interval
+	jointCoords[2] = off_z + (mult_z * joint.position.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
+
+//for (int i=0; i<9; i++)
+	//	jointRots[i] = joint.orientation.orientation.elements[i];
+
 	return 0;
 }
 
@@ -164,6 +170,8 @@ void genOscMsg(osc::OutboundPacketStream *p, char *name) {
 		*p << userID;
 	for (int i = 0; i < nDimensions; i++)
 		*p << jointCoords[i];
+	//for (int i=0; i < 9; i++)
+	//	*p << (float)jointRots[i];
 	*p << osc::EndMessage;
 }
 
@@ -180,8 +188,7 @@ void genQCMsg(osc::OutboundPacketStream *p, char *name) {
 
 
 
-void sendOSC(const xn::DepthMetaData& dmd)
-{
+void sendOSC() {
 	XnUserID aUsers[15];
 	XnUInt16 nUsers = 15;
 	userGenerator.GetUsers(aUsers, nUsers);
@@ -288,6 +295,7 @@ Options:\n\
   -ox <n>\t Offset to add to X coordinates.\n\
   -oy <n>\t Offset to add to Y coordinates.\n\
   -oz <n>\t Offset to add to Z coordinates.\n\
+  -f\t\t Activate noise filter to reduce jerkyness.\n\
   -k\t\t Enable \"Kitchen\" mode (Animata compatibility mode).\n\
   -q\t\t Enable Quartz Composer OSC format.\n\
   -s <file>\t Save to file (only .oni supported at the moment).\n\
@@ -324,6 +332,7 @@ int main(int argc, char **argv)
 	unsigned int arg = 1,
 				 require_argument = 0;
 	xn::DepthGenerator depth;
+	xn::DepthMetaData depthMD;
 	XnMapOutputMode mapMode;
 	XnStatus nRetVal = XN_STATUS_OK;
 	XnCallbackHandle hUserCallbacks, hCalibrationCallbacks, hPoseCallbacks;
@@ -423,6 +432,12 @@ int main(int argc, char **argv)
 				usage(argv[0]);
 			}
 			break;
+		// case 't':
+		// 	sendRot = true;
+		// break;
+		case 'f':
+			filter = true;
+			break;
 		case 'k': // Set "Kitchen" mode (for Kitchen Budapest's animata)
 			kitchenMode = true;
 			break;
@@ -430,7 +445,7 @@ int main(int argc, char **argv)
 			oscFunc = &genQCMsg;
 			break;
 		case 'r':
-			mirrorMode = true;
+			mirrorMode = false;
 			break;
 		default:
 			printf("Unrecognized option.\n");
@@ -465,6 +480,8 @@ int main(int argc, char **argv)
 	checkRetVal(userGenerator.GetPoseDetectionCap().RegisterToPoseCallbacks(UserPose_PoseDetected, NULL, NULL, hPoseCallbacks));
 	checkRetVal(userGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose));
 	checkRetVal(userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL));
+	if (filter)
+		userGenerator.GetSkeletonCap().SetSmoothing(0.8);
 	xnSetMirror(depth, mirrorMode);
 
 	transmitSocket = new UdpTransmitSocket(IpEndpointName(ADDRESS, PORT));
@@ -493,9 +510,8 @@ int main(int argc, char **argv)
 		// Read next available data
 		context.WaitAnyUpdateAll();
 		// Process the data
-		xn::DepthMetaData depthMD; //Somehow if i take this out of the while loop we get segfaults... :(
 		depth.GetMetaData(depthMD);
-		sendOSC(depthMD);
+		sendOSC();
 	}
 
 	terminate(0);

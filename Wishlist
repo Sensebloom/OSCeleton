@@ -1,7 +1,6 @@
 Correct file playback speed in linux (I have no idea why this happens)
 Add alternative QC format (hierarchy format).
 Viewer window option (OpenNI still can't run in client/server mode in OSX)
-Noise filtering (to reduce skeleton jerkyness).
 Export / playback to BVH animation file format.
 Option to use skeletal hierarchy with limb rotations instead of cartesian coordinates (for Ableton Live, blender, exporting to BVH).
 Use distance of joints to affect the layer's Z-index in animata. Maybe add options to send /layerpos messages based on some of the joints or based on the Z coords?

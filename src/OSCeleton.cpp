@@ -36,7 +36,8 @@ char osc_buffer[OUTPUT_BUFFER_SIZE];
 UdpTransmitSocket *transmitSocket;
 
 char tmp[50];         //Temp buffer for OSC address pattern
-double jointCoords[3];
+int userID;
+float jointCoords[3];
 
 //Multipliers for coordinate system. This is useful if you use software like animata,
 //that needs OSC messages to use an arbitrary coordinate system.
@@ -51,7 +52,7 @@ double off_y = 0.0;
 double off_z = 0.0;
 
 bool kitchenMode = false;
-bool mirrorMode = true;
+bool mirrorMode = false;
 bool play = false;
 bool record = false;
 int nDimensions = 3;
@@ -146,10 +147,10 @@ int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 	if (joint.fConfidence < 0.5)
 		return -1;
 
-	jointCoords[0] = player;
-	jointCoords[1] = off_x + (mult_x * joint.position.X / 1280); //Normalize coords to 0..1 interval
-	jointCoords[2] = off_y + (mult_y * (1280 - joint.position.Y) / 2560); //Normalize coords to 0..1 interval
-	jointCoords[3] = off_z + (mult_z * joint.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
+	userID = player;
+	jointCoords[0] = off_x + (mult_x * (1280 - joint.position.X) / 2560); //Normalize coords to 0..1 interval
+	jointCoords[1] = off_y + (mult_y * (1280 - joint.position.Y) / 2560); //Normalize coords to 0..1 interval
+	jointCoords[2] = off_z + (mult_z * joint.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
 	return 0;
 }
 
@@ -160,9 +161,9 @@ void genOscMsg(osc::OutboundPacketStream *p, char *name) {
 	*p << osc::BeginMessage( "/joint" );
 	*p << name;
 	if (!kitchenMode)
-		*p << (int)jointCoords[0];
-	for (int i = 1; i < nDimensions+1; i++)
-		*p << (float)jointCoords[i];
+		*p << userID;
+	for (int i = 0; i < nDimensions; i++)
+		*p << jointCoords[i];
 	*p << osc::EndMessage;
 }
 
@@ -170,10 +171,10 @@ void genOscMsg(osc::OutboundPacketStream *p, char *name) {
 
 // Generate OSC message with Quartz Composer format - based on Steve Elbows's code ;)
 void genQCMsg(osc::OutboundPacketStream *p, char *name) {
-	sprintf(tmp, "/joint/%s/%d", name, (int)jointCoords[0]);
+	sprintf(tmp, "/joint/%s/%d", name, userID);
 	*p << osc::BeginMessage(tmp);
-	for (int i = 1; i < nDimensions+1; i++)
-		*p << (float)jointCoords[i];
+	for (int i = 0; i < nDimensions; i++)
+		*p << jointCoords[i];
 	*p << osc::EndMessage;
 }
 
@@ -429,7 +430,7 @@ int main(int argc, char **argv)
 			oscFunc = &genQCMsg;
 			break;
 		case 'r':
-			mirrorMode = false;
+			mirrorMode = true;
 			break;
 		default:
 			printf("Unrecognized option.\n");

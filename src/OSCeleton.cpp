@@ -21,10 +21,14 @@
 #include <cstdio>
 #include <csignal>
 
+#include <GL/glut.h>
+
 #include <XnCppWrapper.h>
 
 #include <ip/UdpSocket.h>
 #include <osc/OscOutboundPacketStream.h>
+
+#include "viewer.h"
 
 
 
@@ -35,18 +39,20 @@ int PORT = 7110;
 char osc_buffer[OUTPUT_BUFFER_SIZE];
 UdpTransmitSocket *transmitSocket;
 
-char tmp[50];         //Temp buffer for OSC address pattern
+char tmp[50]; //Temp buffer for OSC address pattern
 int userID;
 float jointCoords[3];
 
-//Multipliers for coordinate system. This is useful if you use software like animata,
-//that needs OSC messages to use an arbitrary coordinate system.
+//Multipliers for coordinate system. This is useful if you use
+//software like animata, that needs OSC messages to use an arbitrary
+//coordinate system.
 double mult_x = 1;
 double mult_y = 1;
 double mult_z = 1;
 
-//Offsets for coordinate system. This is useful if you use software like animata,
-//that needs OSC messages to use an arbitrary coordinate system.
+//Offsets for coordinate system. This is useful if you use software
+//like animata, that needs OSC messages to use an arbitrary coordinate
+//system.
 double off_x = 0.0;
 double off_y = 0.0;
 double off_z = 0.0;
@@ -59,24 +65,26 @@ bool sendRot = false;
 bool filter = false;
 int nDimensions = 3;
 
-void (*oscFunc)(osc::OutboundPacketStream* , char*) = NULL;
+void (*oscFunc)(osc::OutboundPacketStream*, char*) = NULL;
 
 xn::Context context;
+xn::DepthGenerator depth;
+xn::DepthMetaData depthMD;
 xn::UserGenerator userGenerator;
-XnChar g_strPose[20];
+XnChar g_strPose[20] = "";
 
 
 
 // Callback: New user was detected
-void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie) {
+void XN_CALLBACK_TYPE new_user(xn::UserGenerator& generator, XnUserID nId, void* pCookie) {
 	printf("New User %d\n", nId);
 	userGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
 
 	if (kitchenMode) return;
 
-	osc::OutboundPacketStream p( osc_buffer, OUTPUT_BUFFER_SIZE );
+	osc::OutboundPacketStream p(osc_buffer, OUTPUT_BUFFER_SIZE);
 	p << osc::BeginBundleImmediate;
-	p << osc::BeginMessage( "/new_user" );
+	p << osc::BeginMessage("/new_user");
 	p << (int)nId;
 	p << osc::EndMessage;
 	p << osc::EndBundle;
@@ -86,14 +94,14 @@ void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& generator, XnUserID nId, v
 
 
 // Callback: An existing user was lost
-void XN_CALLBACK_TYPE User_LostUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie) {
+void XN_CALLBACK_TYPE lost_user(xn::UserGenerator& generator, XnUserID nId, void* pCookie) {
 	printf("Lost user %d\n", nId);
 
 	if (kitchenMode) return;
 
 	osc::OutboundPacketStream p( osc_buffer, OUTPUT_BUFFER_SIZE );
 	p << osc::BeginBundleImmediate;
-	p << osc::BeginMessage( "/lost_user" );
+	p << osc::BeginMessage("/lost_user");
 	p << (int)nId;
 	p << osc::EndMessage;
 	p << osc::EndBundle;
@@ -103,7 +111,7 @@ void XN_CALLBACK_TYPE User_LostUser(xn::UserGenerator& generator, XnUserID nId, 
 
 
 // Callback: Detected a pose
-void XN_CALLBACK_TYPE UserPose_PoseDetected(xn::PoseDetectionCapability& capability, const XnChar* strPose, XnUserID nId, void* pCookie) {
+void XN_CALLBACK_TYPE pose_detected(xn::PoseDetectionCapability& capability, const XnChar* strPose, XnUserID nId, void* pCookie) {
 	printf("Pose %s detected for user %d\n", strPose, nId);
 	userGenerator.GetPoseDetectionCap().StopPoseDetection(nId);
 	userGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
@@ -112,14 +120,14 @@ void XN_CALLBACK_TYPE UserPose_PoseDetected(xn::PoseDetectionCapability& capabil
 
 
 // Callback: Started calibration
-void XN_CALLBACK_TYPE UserCalibration_CalibrationStart(xn::SkeletonCapability& capability, XnUserID nId, void* pCookie) {
+void XN_CALLBACK_TYPE calibration_started(xn::SkeletonCapability& capability, XnUserID nId, void* pCookie) {
 	printf("Calibration started for user %d\n", nId);
 }
 
 
 
 // Callback: Finished calibration
-void XN_CALLBACK_TYPE UserCalibration_CalibrationEnd(xn::SkeletonCapability& capability, XnUserID nId, XnBool bSuccess, void* pCookie) {
+void XN_CALLBACK_TYPE calibration_ended(xn::SkeletonCapability& capability, XnUserID nId, XnBool bSuccess, void* pCookie) {
 	if (bSuccess) {
 		printf("Calibration complete, start tracking user %d\n", nId);
 		userGenerator.GetSkeletonCap().StartTracking(nId);
@@ -143,16 +151,16 @@ void XN_CALLBACK_TYPE UserCalibration_CalibrationEnd(xn::SkeletonCapability& cap
 
 
 int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
-	XnSkeletonJointTransformation joint;
-	userGenerator.GetSkeletonCap().GetSkeletonJoint(player, eJoint, joint);
+	XnSkeletonJointPosition joint;
+	userGenerator.GetSkeletonCap().GetSkeletonJointPosition(player, eJoint, joint);
 
-	if ((joint.position.fConfidence < 0.5))// || (joint.orientation.fConfidence < 0.5))
+	if (joint.fConfidence < 0.5)
 		return -1;
 
 	userID = player;
-	jointCoords[0] = off_x + (mult_x * (1280 + joint.position.position.X) / 2560); //Normalize coords to 0..1 interval
-	jointCoords[1] = off_y + (mult_y * (1280 - joint.position.position.Y) / 2560); //Normalize coords to 0..1 interval
-	jointCoords[2] = off_z + (mult_z * joint.position.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
+	jointCoords[0] = off_x + (mult_x * (1280 - joint.position.X) / 2560); //Normalize coords to 0..1 interval
+	jointCoords[1] = off_y + (mult_y * (1280 - joint.position.Y) / 2560); //Normalize coords to 0..1 interval
+	jointCoords[2] = off_z + (mult_z * joint.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
 
 //for (int i=0; i<9; i++)
 	//	jointRots[i] = joint.orientation.orientation.elements[i];
@@ -188,14 +196,30 @@ void genQCMsg(osc::OutboundPacketStream *p, char *name) {
 
 
 
+void sendUserPosMsg(XnUserID id) {
+	osc::OutboundPacketStream p(osc_buffer, OUTPUT_BUFFER_SIZE);
+	XnPoint3D com;
+	sprintf(tmp, "/user/%d", id);
+	p << osc::BeginBundleImmediate;
+	p << osc::BeginMessage(tmp);
+	userGenerator.GetCoM(id, com);
+	p << (float)(off_x + (mult_x * (1280 - com.X) / 2560));
+	p << (float)(off_y + (mult_y * (1280 - com.Y) / 2560));
+	p << (float)(off_z + (mult_z * com.Z * 7.8125 / 10000));
+	p << osc::EndMessage;
+	p << osc::EndBundle;
+	transmitSocket->Send(p.Data(), p.Size());
+}
+
+
+
 void sendOSC() {
 	XnUserID aUsers[15];
 	XnUInt16 nUsers = 15;
 	userGenerator.GetUsers(aUsers, nUsers);
-	for (int i = 0; i < nUsers; ++i)
-	{
+	for (int i = 0; i < nUsers; ++i) {
 		if (userGenerator.GetSkeletonCap().IsTracking(aUsers[i])) {
-			osc::OutboundPacketStream p( osc_buffer, OUTPUT_BUFFER_SIZE );
+			osc::OutboundPacketStream p(osc_buffer, OUTPUT_BUFFER_SIZE);
 			p << osc::BeginBundleImmediate;
 
 			if (jointPos(aUsers[i], XN_SKEL_HEAD) == 0) {
@@ -274,6 +298,10 @@ void sendOSC() {
 			p << osc::EndBundle;
 		    transmitSocket->Send(p.Data(), p.Size());
 		}
+		else {
+			//Send user's center of mass
+			sendUserPosMsg(aUsers[i]);
+		}
 	}
 }
 
@@ -310,8 +338,8 @@ For a more detailed explanation of options consult the README file.\n\n",
 
 void checkRetVal(XnStatus nRetVal) {
 	if (nRetVal != XN_STATUS_OK) {
-		printf("There was a problem initializing kinect... Make sure you have\
-connected both usb and power cables and that the driver and OpenNI framework\
+		printf("There was a problem initializing kinect... Make sure you have \
+connected both usb and power cables and that the driver and OpenNI framework \
 are correctly installed.\n\n");
 		exit(1);
 	}
@@ -327,12 +355,20 @@ void terminate(int ignored) {
 
 
 
-int main(int argc, char **argv)
-{
+void main_loop() {
+	// Read next available data
+	context.WaitAnyUpdateAll();
+	// Process the data
+	depth.GetMetaData(depthMD);
+	sendOSC();
+	draw();
+}
+
+
+
+int main(int argc, char **argv) {
 	unsigned int arg = 1,
 				 require_argument = 0;
-	xn::DepthGenerator depth;
-	xn::DepthMetaData depthMD;
 	XnMapOutputMode mapMode;
 	XnStatus nRetVal = XN_STATUS_OK;
 	XnCallbackHandle hUserCallbacks, hCalibrationCallbacks, hPoseCallbacks;
@@ -438,7 +474,7 @@ int main(int argc, char **argv)
 		case 'f':
 			filter = true;
 			break;
-		case 'k': // Set "Kitchen" mode (for Kitchen Budapest's animata)
+		case 'k':
 			kitchenMode = true;
 			break;
 		case 'q': // Set Quartz Composer mode
@@ -462,7 +498,7 @@ int main(int argc, char **argv)
 	if (oscFunc == NULL)
 		oscFunc = genOscMsg;
 
-	depth.Create(context);
+	checkRetVal(depth.Create(context));
 
 	if (!play) {
 		mapMode.nXRes = XN_VGA_X_RES;
@@ -475,14 +511,14 @@ int main(int argc, char **argv)
 	if (nRetVal != XN_STATUS_OK)
 		nRetVal = userGenerator.Create(context);
 
-	checkRetVal(userGenerator.RegisterUserCallbacks(User_NewUser, User_LostUser, NULL, hUserCallbacks));
-	checkRetVal(userGenerator.GetSkeletonCap().RegisterCalibrationCallbacks(UserCalibration_CalibrationStart, UserCalibration_CalibrationEnd, NULL, hCalibrationCallbacks));
-	checkRetVal(userGenerator.GetPoseDetectionCap().RegisterToPoseCallbacks(UserPose_PoseDetected, NULL, NULL, hPoseCallbacks));
+	checkRetVal(userGenerator.RegisterUserCallbacks(new_user, lost_user, NULL, hUserCallbacks));
+	checkRetVal(userGenerator.GetSkeletonCap().RegisterCalibrationCallbacks(calibration_started, calibration_ended, NULL, hCalibrationCallbacks));
+	checkRetVal(userGenerator.GetPoseDetectionCap().RegisterToPoseCallbacks(pose_detected, NULL, NULL, hPoseCallbacks));
 	checkRetVal(userGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose));
 	checkRetVal(userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL));
 	if (filter)
 		userGenerator.GetSkeletonCap().SetSmoothing(0.8);
-	xnSetMirror(depth, mirrorMode);
+	xnSetMirror(depth, !mirrorMode);
 
 	transmitSocket = new UdpTransmitSocket(IpEndpointName(ADDRESS, PORT));
 	signal(SIGTERM, terminate);
@@ -506,13 +542,8 @@ int main(int argc, char **argv)
 	if (record)
 		recorder.AddNodeToRecording(depth, XN_CODEC_16Z_EMB_TABLES);
 
-	while (true) {
-		// Read next available data
-		context.WaitAnyUpdateAll();
-		// Process the data
-		depth.GetMetaData(depthMD);
-		sendOSC();
-	}
+	init_window(argc, argv, 640, 480, main_loop);
+	glutMainLoop();
 
 	terminate(0);
 }

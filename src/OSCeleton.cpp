@@ -21,14 +21,12 @@
 #include <cstdio>
 #include <csignal>
 
-#include <GL/glut.h>
-
 #include <XnCppWrapper.h>
 
 #include <ip/UdpSocket.h>
 #include <osc/OscOutboundPacketStream.h>
 
-#include "viewer.h"
+#include "common.h"
 
 
 
@@ -63,6 +61,7 @@ bool play = false;
 bool record = false;
 bool sendRot = false;
 bool filter = false;
+bool preview = false;
 int nDimensions = 3;
 
 void (*oscFunc)(osc::OutboundPacketStream*, char*) = NULL;
@@ -159,7 +158,7 @@ int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 
 	userID = player;
 	jointCoords[0] = off_x + (mult_x * (1280 - joint.position.X) / 2560); //Normalize coords to 0..1 interval
-	jointCoords[1] = off_y + (mult_y * (1280 - joint.position.Y) / 2560); //Normalize coords to 0..1 interval
+	jointCoords[1] = off_y + (mult_y * (960 - joint.position.Y) / 1920); //Normalize coords to 0..1 interval
 	jointCoords[2] = off_z + (mult_z * joint.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
 
 //for (int i=0; i<9; i++)
@@ -316,13 +315,14 @@ Example: %s -a 127.0.0.1 -p 7110 -d 3 -n 1 -mx 1 -my 1 -mz 1 -ox 0 -oy 0 -oz 0\n
 Options:\n\
   -a <addr>\t Address to send OSC packets to (default: localhost).\n\
   -p <port>\t Port to send OSC packets to (default: 7110).\n\
-  -r\t\t Reverse image (disable mirror mode).\n\
+  -w\t\t Activate depth view window.\n\
   -mx <n>\t Multiplier for X coordinates.\n\
   -my <n>\t Multiplier for Y coordinates.\n\
   -mz <n>\t Multiplier for Z coordinates.\n\
   -ox <n>\t Offset to add to X coordinates.\n\
   -oy <n>\t Offset to add to Y coordinates.\n\
   -oz <n>\t Offset to add to Z coordinates.\n\
+  -r\t\t Reverse image (disable mirror mode).\n\
   -f\t\t Activate noise filter to reduce jerkyness.\n\
   -k\t\t Enable \"Kitchen\" mode (Animata compatibility mode).\n\
   -q\t\t Enable Quartz Composer OSC format.\n\
@@ -350,6 +350,8 @@ are correctly installed.\n\n");
 void terminate(int ignored) {
 	context.Shutdown();
 	delete transmitSocket;
+	if (preview)
+		glutDestroyWindow(window);
 	exit(0);
 }
 
@@ -361,7 +363,8 @@ void main_loop() {
 	// Process the data
 	depth.GetMetaData(depthMD);
 	sendOSC();
-	draw();
+	if (preview)
+		draw();
 }
 
 
@@ -406,6 +409,9 @@ int main(int argc, char **argv) {
 				printf("Bad port number given.\n");
 				usage(argv[0]);
 			}
+			break;
+		case 'w':
+			preview = true;
 			break;
 		case 's':
 			checkRetVal(recorder.Create(context));
@@ -542,8 +548,14 @@ int main(int argc, char **argv) {
 	if (record)
 		recorder.AddNodeToRecording(depth, XN_CODEC_16Z_EMB_TABLES);
 
-	init_window(argc, argv, 640, 480, main_loop);
-	glutMainLoop();
+	if (preview) {
+		init_window(argc, argv, 640, 480, main_loop);
+		glutMainLoop();
+	}
+	else {
+		while(true)
+			main_loop();
+	}
 
 	terminate(0);
 }

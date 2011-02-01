@@ -88,6 +88,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy $(InputDir)\lib\glut32.dll $(OutDir)\"
 			/>
 		</Configuration>
 		<Configuration
@@ -124,6 +125,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
+				ForcedIncludeFiles=""
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -136,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="OpenNI.lib WS2_32.Lib winmm.lib"
+				AdditionalDependencies="OpenNI.lib WS2_32.Lib winmm.lib glut32.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="lib;&quot;$(OPEN_NI_LIB)&quot;"
 				GenerateDebugInformation="true"
@@ -165,6 +167,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy $(InputDir)\lib\glut32.dll $(OutDir)\"
 			/>
 		</Configuration>
 	</Configurations>
@@ -208,12 +211,20 @@
 				RelativePath="..\oscpack\ip\win32\UdpSocket.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\viewer.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\viewer.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

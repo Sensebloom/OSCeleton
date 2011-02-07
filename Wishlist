@@ -1,3 +1,4 @@
+Add option to control the strength of the smoothing
 Correct file playback speed in linux (I have no idea why this happens)
 Add alternative QC format (hierarchy format).
 Viewer window option (OpenNI still can't run in client/server mode in OSX)

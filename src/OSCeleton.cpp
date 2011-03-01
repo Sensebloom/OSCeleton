@@ -55,7 +55,12 @@ double off_x = 0.0;
 double off_y = 0.0;
 double off_z = 0.0;
 
+// hand data
+float handCoords[3];
+bool haveHand = false;
+
 bool kitchenMode = false;
+bool handMode = false;
 bool mirrorMode = true;
 bool play = false;
 bool record = false;
@@ -70,9 +75,38 @@ xn::Context context;
 xn::DepthGenerator depth;
 xn::DepthMetaData depthMD;
 xn::UserGenerator userGenerator;
+xn::HandsGenerator handsGenerator;
+xn::GestureGenerator gestureGenerator;
+
 XnChar g_strPose[20] = "";
+#define GESTURE_TO_USE "Wave"
 
 
+//gesture callbacks
+void XN_CALLBACK_TYPE Gesture_Recognized(xn::GestureGenerator& generator, const XnChar* strGesture, const XnPoint3D* pIDPosition, const XnPoint3D* pEndPosition, void* pCookie) {
+    printf("Gesture recognized: %s\n", strGesture);
+    gestureGenerator.RemoveGesture(strGesture);
+    handsGenerator.StartTracking(*pEndPosition);
+}
+
+void XN_CALLBACK_TYPE Gesture_Process(xn::GestureGenerator& generator, const XnChar* strGesture, const XnPoint3D* pPosition, XnFloat fProgress, void* pCookie) {
+}
+
+//hand callbacks new_hand, update_hand, lost_hand
+void XN_CALLBACK_TYPE new_hand(xn::HandsGenerator &generator, XnUserID nId, const XnPoint3D *pPosition, XnFloat fTime, void *pCookie) {
+	printf("New Hand %d\n", nId);
+}
+void XN_CALLBACK_TYPE lost_hand(xn::HandsGenerator &generator, XnUserID nId, XnFloat fTime, void *pCookie) {
+	printf("Lost Hand %d               \n", nId);
+    gestureGenerator.AddGesture(GESTURE_TO_USE, NULL);
+}
+
+void XN_CALLBACK_TYPE update_hand(xn::HandsGenerator &generator, XnUserID nID, const XnPoint3D *pPosition, XnFloat fTime, void *pCookie) {
+	haveHand = true;
+	handCoords[0] = pPosition->X;
+	handCoords[1] = pPosition->Y;
+	handCoords[2] = pPosition->Z;
+}
 
 // Callback: New user was detected
 void XN_CALLBACK_TYPE new_user(xn::UserGenerator& generator, XnUserID nId, void* pCookie) {
@@ -210,9 +244,28 @@ void sendUserPosMsg(XnUserID id) {
 	transmitSocket->Send(p.Data(), p.Size());
 }
 
+void sendHandOSC() {
+	if (!haveHand) 
+		return;
 
+	osc::OutboundPacketStream p(osc_buffer, OUTPUT_BUFFER_SIZE);
+	p << osc::BeginBundleImmediate;
+	jointCoords[0] = off_x + (mult_x * (480 - handCoords[0]) / 960); //Normalize coords to 0..1 interval
+	jointCoords[1] = off_y + (mult_y * (320 - handCoords[1]) / 640); //Normalize coords to 0..1 interval
+	jointCoords[2] = off_z + (mult_z * handCoords[2] * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
+	oscFunc(&p, "l_hand");
+	p << osc::EndBundle;
+    transmitSocket->Send(p.Data(), p.Size());
+
+	printf("hand %.3f %.3f     \r", jointCoords[0], jointCoords[1]);
+	haveHand = false;
+}
 
 void sendOSC() {
+	if (handMode) {
+		sendHandOSC();
+		return;
+	}
 	XnUserID aUsers[15];
 	XnUInt16 nUsers = 15;
 	userGenerator.GetUsers(aUsers, nUsers);
@@ -324,7 +377,8 @@ Options:\n\
   -oz <n>\t Offset to add to Z coordinates.\n\
   -r\t\t Reverse image (disable mirror mode).\n\
   -f\t\t Activate noise filter to reduce jerkyness.\n\
-  -k\t\t Enable \"Kitchen\" mode (Animata compatibility mode).\n\
+  -n\t\t Enable \"Kitchen\" mode (Animata compatibility mode).\n\
+  -t\t\t Enable hand tracking mode\n\
   -q\t\t Enable Quartz Composer OSC format.\n\
   -s <file>\t Save to file (only .oni supported at the moment).\n\
   -i <file>\t Play from file (only .oni supported at the moment).\n\
@@ -374,7 +428,7 @@ int main(int argc, char **argv) {
 				 require_argument = 0;
 	XnMapOutputMode mapMode;
 	XnStatus nRetVal = XN_STATUS_OK;
-	XnCallbackHandle hUserCallbacks, hCalibrationCallbacks, hPoseCallbacks;
+	XnCallbackHandle hUserCallbacks, hCalibrationCallbacks, hPoseCallbacks, hHandsCallbacks, hGestureCallbacks;
 	xn::Recorder recorder;
 
 	context.Init();
@@ -483,6 +537,10 @@ int main(int argc, char **argv) {
 		case 'k':
 			kitchenMode = true;
 			break;
+		case 'n':
+			handMode = true;
+			printf("Switching to hand mode\n");
+			break;
 		case 'q': // Set Quartz Composer mode
 			oscFunc = &genQCMsg;
 			break;
@@ -513,17 +571,28 @@ int main(int argc, char **argv) {
 		depth.SetMapOutputMode(mapMode);
 	}
 
-	nRetVal = context.FindExistingNode(XN_NODE_TYPE_USER, userGenerator);
-	if (nRetVal != XN_STATUS_OK)
-		nRetVal = userGenerator.Create(context);
+	if (handMode) {
+		nRetVal = handsGenerator.Create(context);
+		nRetVal = gestureGenerator.Create(context);
+		nRetVal = gestureGenerator.RegisterGestureCallbacks(Gesture_Recognized, Gesture_Process, NULL, hGestureCallbacks); 
+		nRetVal = handsGenerator.RegisterHandCallbacks(new_hand, update_hand, lost_hand, NULL, hHandsCallbacks);
+		//if (filter)
+		//	handsGenerator.SetSmoothing(0.8);
+	}
+	else {
+		nRetVal = context.FindExistingNode(XN_NODE_TYPE_USER, userGenerator);
+		if (nRetVal != XN_STATUS_OK)
+			nRetVal = userGenerator.Create(context);
 
-	checkRetVal(userGenerator.RegisterUserCallbacks(new_user, lost_user, NULL, hUserCallbacks));
-	checkRetVal(userGenerator.GetSkeletonCap().RegisterCalibrationCallbacks(calibration_started, calibration_ended, NULL, hCalibrationCallbacks));
-	checkRetVal(userGenerator.GetPoseDetectionCap().RegisterToPoseCallbacks(pose_detected, NULL, NULL, hPoseCallbacks));
-	checkRetVal(userGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose));
-	checkRetVal(userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL));
-	if (filter)
-		userGenerator.GetSkeletonCap().SetSmoothing(0.8);
+		checkRetVal(userGenerator.RegisterUserCallbacks(new_user, lost_user, NULL, hUserCallbacks));
+		checkRetVal(userGenerator.GetSkeletonCap().RegisterCalibrationCallbacks(calibration_started, calibration_ended, NULL, hCalibrationCallbacks));
+		checkRetVal(userGenerator.GetPoseDetectionCap().RegisterToPoseCallbacks(pose_detected, NULL, NULL, hPoseCallbacks));
+		checkRetVal(userGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose));
+		checkRetVal(userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL));
+		if (filter)
+			userGenerator.GetSkeletonCap().SetSmoothing(0.8);
+	}
+	
 	xnSetMirror(depth, !mirrorMode);
 
 	transmitSocket = new UdpTransmitSocket(IpEndpointName(ADDRESS, PORT));
@@ -545,6 +614,9 @@ int main(int argc, char **argv) {
 	printf("Initialized Kinect, looking for users...\n\n");
 	context.StartGeneratingAll();
 
+	if (handMode) {
+		nRetVal = gestureGenerator.AddGesture(GESTURE_TO_USE, NULL); 
+	}
 	if (record)
 		recorder.AddNodeToRecording(depth, XN_CODEC_16Z_EMB_TABLES);
 
@@ -559,4 +631,3 @@ int main(int argc, char **argv) {
 
 	terminate(0);
 }
-

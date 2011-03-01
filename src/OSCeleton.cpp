@@ -377,8 +377,8 @@ Options:\n\
   -oz <n>\t Offset to add to Z coordinates.\n\
   -r\t\t Reverse image (disable mirror mode).\n\
   -f\t\t Activate noise filter to reduce jerkyness.\n\
-  -n\t\t Enable \"Kitchen\" mode (Animata compatibility mode).\n\
-  -t\t\t Enable hand tracking mode\n\
+  -k\t\t Enable \"Kitchen\" mode (Animata compatibility mode).\n\
+  -n\t\t Enable hand tracking mode\n\
   -q\t\t Enable Quartz Composer OSC format.\n\
   -s <file>\t Save to file (only .oni supported at the moment).\n\
   -i <file>\t Play from file (only .oni supported at the moment).\n\
@@ -631,3 +631,4 @@ int main(int argc, char **argv) {
 
 	terminate(0);
 }
+

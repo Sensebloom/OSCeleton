@@ -1,0 +1,350 @@
+2009-03-07 Stephen Sinclair <radarsat1@gmail.com>
+	* Fix some typos, grammar, and links in the documentation.
+	* Remove TCP from TODO list.
+	* Add recent contributors to the AUTHORS list.
+	* Add previous release notes to the NEWS file.
+	* Add note about MSVC in README.
+	* Release 0.26.
+
+2009-03-06 Stephen Sinclair <radarsat1@gmail.com>
+	* Add a return value to lo_bundle_add_message().
+	* Avoid pointer arithmetic on void* types for compilers that can't handle it.
+	* Move all local variable declarations to the top of the scope.
+	* Conditionally avoid the use of variable-argument macros if not GCC.
+	* Fix multicast on Windows: join multicast group after bind() instead of before.
+	* Avoid the use of C99 struct literals when giving timetag arguments.
+	* Add premake4, used to generate MSVC project/solution files.
+	* Add numerous typical kludges necessary to cover differences in MSVC.
+	* Use log() instead of a while loop to calculate new data size.
+	* Add return values for all functions that can potentially fail.
+	* Add premake4-related files to the dist build.
+
+2009-02-17 Stephen Sinclair <radarsat1@gmail.com>
+	* For multicast, enable SO_REUSEPORT as well as SO_REUSEADDR. (Mike Wozniewski)
+
+2009-02-12 Stephen Sinclair <radarsat1@gmail.com>
+	* Fix the definition of LO_TT_IMMEDIATE per the OSC spec. (Dominic Sacré)
+
+2009-02-01 Stephen Sinclair <radarsat1@gmail.com>
+	* Add function lo_message_get_timestamp(). (Alex McLean)
+	* Fix magic constant in lo_timetag_diff. (Dominic Sacré)
+	* Bump the LO_SO_VERSION version major number to resolve ABI
+	  incompatibilities with previous versions.  In particular, the
+	  addition of 'const' to an argument of lo_blob_new() in r80
+	  constituted an API add and removal, hence the reset of the 3rd
+	  number ('age') according to the libtool manual. (SS)
+
+2009-01-04 Stephen Sinclair <radarsat1@gmail.com>
+	* Add checks to configure.ac for select() and poll().
+	* Use inet_addr if inet_aton is not available. (i.e., on Windows)
+	* Retry a TCP connection once if it failed to connect on send.
+	* Remove useless conditional call to freeaddrinfo().
+	* Only implement gai_strerrorA if gai_strerror was not already defined.
+	* Make the TCP protocol retain session information for multiple connections.
+
+2008-12-23  Nicholas Humfrey  <njh@aelius.com>
+	* Added a function called lo_server_wait() which waits for a message to be received.
+
+2008-11-23  Stephen Sinclair <radarsat1@gmail.com>
+	* Use the \internal Doxygen command to hide internal functions.
+
+2008-10-11  Kentaro Fukuchi <fukuchi@megaui.net>
+	* lo_url_get_protocol_id() has been added.
+	* lo_address_new_with_proto() has been added.
+	* Changed lo_address_new_from_url() to use lo_url_get_protocol_id().
+
+2008-10-09  Kentaro Fukuchi <fukuchi@megaui.net>
+	* src/tools/oscsend.c: Fixed compile-time error on OS X.
+	  (thanks to Koichiro Ozaki)
+
+2008-10-07  Stephen Sinclair <radarsat1@gmail.com>
+	* Move lo_arg_size(), lo_get_path(), lo_arg_host/network_endian() back to lo_lowlevel.h.
+	* Expose the lo_server_dispatch_data() function as public.
+	* Fix zero-padding of path and type strings in lo_message_deserialise().
+
+2008-09-07  Kentaro Fukuchi <fukuchi@megaui.net>
+	* Memory leak in lo_address_new_from_url() has been fixed.
+	* Memory leak in dispatch_method() has been fixed.
+	* Fix a typo and some missing free() in testlo.c.
+
+2008-09-04  Stephen Sinclair <radarsat1@gmail.com>
+	* Change license of LibLo to LGPL 2.1 or later.
+	  (With permission of all authors.)
+
+2008-07-11  Kentaro Fukuchi <fukuchi@megaui.net>
+	* Some error checks have been added.
+	* oscsend now uses strtod() instead of strtof(). strtof of glibc returned
+	  buggy results when --std=c99 is not given. (strtof is described in C99)
+
+2008-06-18  Stephen Sinclair <radarsat1@gmail.com>
+	* Update AUTHORS
+	* Release version 0.25
+
+2008-06-05  Stephen Sinclair <radarsat1@gmail.com>
+	* Fix autogen.sh: Use glibtoolize if it exists, for OS X.
+	* Fix undefined MSG_NOSIGNAL in testlo.c.
+	* Fix warning on lo_message_deserialize().
+
+2008-05-05  Stephen Sinclair <radarsat1@gmail.com>
+	* Fix invalid pointer in lo_server_del_method() when doing pattern matching. (Camille Troillard)
+	
+2008-04-28  Stephen Sinclair <radarsat1@gmail.com>
+	* Add support for multicast groups to LibLo.
+	* Add test case for sending a crafted packet that would crash a lo_server without validation.
+	* Make validation-related functions internal to liblo.
+	* Add server input validation along with a function to deserialise an OSC message. (Chris Hixon)
+	* Fix bad socket number in lo_client_sockets when a server is freed.
+
+2008-04-21  Stephen Sinclair <radarsat1@gmail.com>
+	* Added Daniel Lacroix's patch for level 2 broadcast support.
+	* Use resolved IP address to detect broadcast address.
+
+2008-02-25  Stephen Sinclair <radarsat1@gmail.com>
+	* Fix bug where curly brackets didn't match the last item in the comma-separated list.
+
+2008-02-20  Stephen Sinclair <radarsat1@gmail.com>
+	* Added lo_bundle_free_messages() to free a bundle and the messages it points to. (Kentaro Fukuchi)
+
+2008-01-27  Stephen Sinclair <radarsat1@gmail.com>
+	* Fix for lo_message_add(), wrong argument order for lo_message_add_varargs_internal(). (Dave Robillard)
+	* Added test case for lo_message_add().
+
+2008-01-20  Stephen Sinclair  <radarsat1@gmail.com>
+
+	* Added lo_message_add_varargs() to play well with C functions taking a variable number of arguments. (Dave Robillard)
+	* Avoid unnecessary repetitive reallocation on lo_message_add_*(). (Dave Robillard)
+	* Fixed errors related to 64-bit in packing blob and MIDI messages. (Dave Robillard)
+
+2008-01-13  Stephen Sinclair  <radarsat1@gmail.com>
+
+        * Fixed index increment in sendosc.c for string and symbol types
+
+2008-01-12  Nicholas Humfrey  <njh@aelius.com>
+
+	* Added tools from Kentaro Fukuchi
+
+2007-03-19  Nicholas Humfrey  <njh@aelius.com>
+
+	* Applied patch from Chris Hixon to check for buffer overflows
+
+2007-03-16  Nicholas Humfrey  <njh@aelius.com>
+
+	* Fixed several compiler warnings
+	* Changed address for package bug reports
+	* Released version 0.24
+
+2007-03-09  Nicholas Humfrey  <njh@aelius.com>
+
+	* Changed lo_blob_new() to take const void* (thanks to Lars Luthman)
+	* Disable getnameinfo() method of getting hostname, when IPv6 is disabled
+	* Unlink Unix server socket when it is close (thanks to Dominic Sacr)
+	* Checks size of unix socket path properly
+	* Now accepts unix socket format osc.unix://localhost/tmp/mysocket.sock
+	* Released version 0.24pre1
+	
+2007-03-08  Nicholas Humfrey  <njh@aelius.com>
+
+	* Added lo_server_thread_new_with_proto(), as suggested by Dave Robillard
+	* Applied patch from Aron Stansvik to fix bug with FreeBSD/NetBSD systems
+	* Removed freeaddrinfo() from resolve_address() error case (thanks to Anthony Green)
+	* Only call connect() for TCP sessions (thanks to Roger B. Dannenberg)
+
+2006-03-29  Nicholas Humfrey  <njh@aelius.com>
+
+	* Applied lo_address_get_url() patch from Sze'kelyi Szabolcs
+	* Added lo_server_get_protocol() and lo_address_get_protocol()
+	* Added tests for lo_address_get_* tests to test tool
+
+2006-01-26  Nicholas Humfrey  <njh@aelius.com>
+
+	* IPv6 is now disabled by default
+	* Released version 0.23
+
+2005-12-29  Nicholas Humfrey  <njh@aelius.com>
+
+	* Fixed pthread resource leak, when stopping thread
+
+2005-12-21  Nicholas Humfrey  <njh@aelius.com>
+
+	* Fixed bug where sockets weren't closed when replying to messages
+	* Split off resolve_address into seperate create_socket function
+	* Only creates new sockets when needed
+
+2005-12-05  Nicholas Humfrey  <njh@aelius.com>
+
+	* Added lo_send_from, lo_send_message_from and lo_send_bundle_from
+	* Merged guts of lo_send_message and lo_send_bundle into new static send_data()
+
+2005-09-04  Steve Harris  <steve@plugin.org.uk>
+
+	* Released 0.22
+
+2005-09-02  Steve Harris  <steve@plugin.org.uk>
+
+	* address.c, server.c: Added patch from Martin Habets that redoes
+	  parts of previous patches...
+
+2005-09-01  Steve Harris  <steve@plugin.org.uk>
+
+	* address.c, server.c: Added patches from Jesse Chappell and Dave
+	  Robillard to close various sockets when there no longer used.
+
+2005-08-19  Steve Harris  <steve@plugin.org.uk>
+
+	* address.c, testlo.c: Added patch from Dave Robillard to fix parsing
+	  of IPV6 addresses in URLs.
+
+2005-08-11  Martin Habets  <mhabets@users.sourceforge.net>
+
+	* message.c: Fix LO_CHAR sending on big endian architectures.
+
+2005-08-09  Martin Habets  <mhabets@users.sourceforge.net>
+
+	* server.c: Add lo_server_del_method()
+	* server_thread.c: Add lo_server_thread_del_method()
+
+2005-07-26  Steve Harris  <steve@plugin.org.uk>
+
+	* bundle.c, server.c: Endianess fixed from Topher Cyll for bundle
+	  timestamps.
+
+	  # Bundle delivery timing is still not right, theres an arithmetic
+	  # errorsomewhere, but I cant see it.
+
+2005-06-05  Steve Harris  <steve@plugin.org.uk>
+
+	* server.c: Patch from Lorenz Schori to optionally disable IPV6 support
+	  with --disable-ipv6
+
+2005-03-31  Steve Harris  <steve@plugin.org.uk>
+
+	* server.c: Patch from Martin Habets that expands wildcarded patch to
+	  the matching path where possible (eg. not when using the NULL
+	  wildcard path).
+
+2005-03-04  Steve Harris  <steve@plugin.org.uk>
+
+	* server.c: try to fix the global struct thing that keeps track of
+	  server sockets.
+
+2005-02-03  Steve Harris  <steve@plugin.org.uk>
+
+	* server.c: made UDP messages resolve back to thier originating server,
+	  or something close to it.
+
+2005-02-03  Taybin Rutkin <taybin@earthlink.net>
+
+	* server.c: commited resource leak fix from Jesse Chappell
+
+2005-01-22  Steve Harris  <steve@plugin.org.uk>
+
+	* address.c: fixed bug when determining protocol of URL with
+	  unspecified sub-protocol. Reported by Pix.
+
+2005-01-13  Steve Harris  <steve@plugin.org.uk>
+
+	* bundle.c: patch from Dave Robillard that fixes bundles of more than 4
+	  messages.
+
+2005-01-13  Steve Harris  <steve@plugin.org.uk>
+
+	* message.c: made the arguments to _add_string and _add_symbol const
+	  char * for C++ compatibility.
+
+2005-01-10  Steve Harris  <steve@plugin.org.uk>
+
+	* message.c: added a source field that represents the source from which
+	  a message was received. Useful in method handlers to determine which
+	  client sent the message.
+
+2004-12-21  Steve Harris  <steve@plugin.org.uk>
+
+	* server.c: added patch from Walco van Loon and Pix that fixes a bug
+	  in the hostname detection fallback code
+
+2004-11-19  Steve Harris  <steve@plugin.org.uk>
+
+	* send.c: added lo_send_timestamped()
+
+2004-11-17  Steve Harris  <steve@plugin.org.uk>
+
+	* server.c: added code to handle bundle reception
+	* bundle.c: code to build bundle objects
+	* timetag.c: code to manipulate and test timetags
+
+2004-10-19  Steve Harris  <steve@plugin.org.uk>
+
+	Release 0.13
+	* lo.h: removed reference to obsolete header lo_backcompat.h
+
+2004-10-17  Steve Harris  <steve@plugin.org.uk>
+
+	* lo_server.c: added code to allow servers to poll() on the server
+	  socket, if available. From Sean Bolton.
+
+2004-08-27  Steve Harris  <steve@plugin.org.uk>
+
+	* lo_lowlevel.h, send.c: added OSX compatibility fixes from Taybin
+	  Rutkin.
+
+2004-08-19  Steve Harris  <steve@plugin.org.uk>
+
+	Release 0.9
+	* testlo.c: added more URL tests
+
+2004-08-19  Steve Harris  <steve@plugin.org.uk>
+
+	* address.c: more bugfixes to URL handling
+
+2004-08-02  Steve Harris  <steve@plugin.org.uk>
+
+	* server.c, address.c: fixed bugs and ommisions in URL handling
+
+2004-07-28  Steve Harris  <steve@plugin.org.uk>
+
+	* send.c, server.c: added code to handle UNIX domain sockets.
+
+2004-07-12  Steve Harris  <steve@plugin.org.uk>
+
+	* server_thread.c: added a lo_server_thread_stop() function for
+	  symmetry with lo_server_thread_start()
+
+2004-06-07  Steve Harris  <steve@plugin.org.uk>
+
+	* server.c: added a lo_server_recv_noblock() that will not wait for
+	  a packet to be received
+
+2004-03-26  Steve Harris  <steve@plugin.org.uk>
+
+	* doc/, *.h: added doxygen documentation
+	* address.c: changed URL methods to accept/expect protocol
+	  specifiers (eg. osc.udp://...)
+	* examples/*.c: added comments, slightly simplified
+
+2004-03-21  Steve Harris  <steve@plugin.org.uk>
+
+	* server.c: made binding to unspecified ports work
+
+2004-03-21  Steve Harris  <steve@plugin.org.uk>
+
+	* message.c: fixed coercion type bugs
+	* server.c: fixed endian conversion bug
+	* testlo.c: added lots of tests
+	* send.c: added implicit guard variable to end of send arguments
+
+2004-03-20  Steve Harris  <steve@plugin.org.uk>
+
+	* message.c, send.c: added support for the remaining types OSC
+
+2004-03-15  Steve Harris  <steve@plugin.org.uk>
+
+	* message.c: changed the definition of the string argument accessor
+	  member (it was wrong before).
+
+	* target.c, *.[ch]: lo_target* is now called lo_address*, this
+	  makes the api much clearer, %s/lo_target/lo_address/g, should
+	  bring all source files up to date.
+
+2004-02-29  Steve Harris  <steve@plugin.org.uk>
+
+	* configure.in, Makefile.am: added auto* stuff

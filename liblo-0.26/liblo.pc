@@ -1,0 +1,10 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: liblo
+Version: 0.26
+Description: A lightweight OSC server/client library
+Libs: -L${libdir} -llo -lpthread
+Cflags: -I${includedir}

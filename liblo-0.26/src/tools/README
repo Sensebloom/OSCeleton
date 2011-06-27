@@ -1,0 +1,71 @@
+oscsend and oscdump 1.0.0 - Send/receive OpenSound Control messages.
+
+GENERAL INFORMATION
+===================
+oscsend and oscdump are OpenSound Control (OSC) tools using liblo. oscsend
+sends an OSC message specified by command line arguments, while oscdump
+receives OSC messages and prints to standard output. Both tools uses UDP for
+networking.
+
+
+INSTALL
+=======
+
+Requirements
+------------
+Liblo is required to compile oscsend and oscdump. See
+
+http://liblo.sourceforge.net/
+
+
+Compile & install
+-----------------
+Just try
+
+./configure
+make
+make install
+
+This compiles and installs oscsend and oscdump to the appropriate directories.
+By default, /usr/local/bin. You can change the destination directory by passing
+some options to the configure script. Run "./configure --help" to see the list
+of options.
+
+
+USAGE
+=====
+Please invoke the command without any arguments to show usage.
+
+Oscsend and oscdump are incompatible with Matt Wright's well known tools,
+sendOSC and dumpOSC.
+
+
+LICENSING INFORMATION
+=====================
+Copyright (C) 2008 Kentaro Fukuchi
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published
+by the Free Software Foundation; either version 2.1 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+Licensealong with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+02110-1301 USA.
+
+
+CONTACTS
+========
+Visit the homepage at:
+
+http://megaui.net/fukuchi/works/oscsend/index.en.html
+
+Please mail any bug reports, suggestions, comments and questions to
+Kentaro Fukuchi <fukuchi@megaui.net>. Questions of license compliance
+are also welcome.

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="OSCeleton"
 	ProjectGUID="{380A9355-E839-4F55-98B1-B33D0CCA4340}"
 	RootNamespace="OSCeleton"
@@ -18,7 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)\$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\oscpack; &quot;$(OPEN_NI_INCLUDE)&quot;"
+				AdditionalIncludeDirectories="&quot;..\liblo-0.26&quot;;&quot;$(OPEN_NI_INCLUDE)&quot;;&quot;../Pre-built.2/include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,9 +61,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="OpenNI.lib WS2_32.Lib winmm.lib"
+				AdditionalDependencies="OpenNI.lib WS2_32.Lib winmm.lib liblo_d.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="lib;&quot;$(OPEN_NI_LIB)&quot;"
+				AdditionalLibraryDirectories="lib;&quot;$(OPEN_NI_LIB)&quot;;&quot;../liblo-0.26/lib/DebugDLL&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -88,12 +88,12 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(InputDir)\lib\glut32.dll $(OutDir)\"
+				CommandLine="copy $(InputDir)\lib\*.dll $(OutDir)\"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)\$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
@@ -118,7 +118,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\oscpack; &quot;$(OPEN_NI_INCLUDE)&quot;"
+				AdditionalIncludeDirectories="&quot;..\liblo-0.26&quot;;&quot;$(OPEN_NI_INCLUDE)&quot;;&quot;../Pre-built.2/include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -138,9 +138,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="OpenNI.lib WS2_32.Lib winmm.lib glut32.lib"
+				AdditionalDependencies="OpenNI.lib WS2_32.Lib winmm.lib glut32.lib liblo.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="lib;&quot;$(OPEN_NI_LIB)&quot;"
+				AdditionalLibraryDirectories="lib;&quot;$(OPEN_NI_LIB)&quot;;&quot;../liblo-0.26/lib/ReleaseDLL&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -167,7 +167,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(InputDir)\lib\glut32.dll $(OutDir)\"
+				CommandLine="copy $(InputDir)\lib\*.dll $(OutDir)\"
 			/>
 		</Configuration>
 	</Configurations>
@@ -180,35 +180,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\oscpack\ip\IpEndpointName.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\oscpack\ip\win32\NetworkingUtils.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\OSCeleton.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\oscpack\osc\OscOutboundPacketStream.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\oscpack\osc\OscPrintReceivedElements.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\oscpack\osc\OscReceivedElements.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\oscpack\osc\OscTypes.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\oscpack\ip\win32\UdpSocket.cpp"
 				>
 			</File>
 			<File

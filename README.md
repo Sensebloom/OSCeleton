@@ -13,7 +13,8 @@ on your language / framework of choice.
 How do I use it?
 ----------------
 
-### First you need to install the OpenNI driver, framework, and middleware
+### First you need to install the OpenNI driver, framework, and 
+middleware
 #### Windows / Linux / Mac OSX
 Get avin's hacked Primesense PSDK driver for kinect:
 [https://github.com/avin2/SensorKinect](https://github.com/avin2/SensorKinect)
@@ -75,7 +76,8 @@ OSC Message format
 ### Lost user - we have lost the user with the following id:
     Address pattern: "/lost_user"
     Type tag: "i"
-    i: The ID of the lost user. (This ID will be free for reuse from now on)
+    i: The ID of the lost user. (This ID will be free for reuse from now 
+on)
 
 ### Joint message - message with the coordinates of each skeleton joint:
     Address pattern: "/joint"
@@ -100,7 +102,8 @@ will not be sent.
 
 #### NOTE: Quartz Composer mode
 You can enable a message format that is more friendly to Quartz
-composer with the "-q" option. The messages will have the following format:
+composer with the "-q" option. The messages will have the following 
+format:
     Address pattern: "/joint/name/id"
     Type tag: "fff"
     f: X coordinate of joint in interval [0.0, 1.0]
@@ -144,6 +147,46 @@ Example (left knee of user 3):
 Other
 -----
 
-### For feature request, reporting bugs, or general osceleton discussion, come join the fun in our [google group](http://groups.google.com/group/osceleton)!
+### For feature request, reporting bugs, or general osceleton 
+discussion, come join the fun in our [google 
+group](http://groups.google.com/group/osceleton)!
 
 Have fun!
+
+OSCeleton-Puppet
+=========
+
+This is a fork of OSCeleton that adds a number of hacks for a specific project.
+
+Checkout [https://github.com/Sensebloom/OSCeleton](https://github.com/Sensebloom/OSCeleton) for more information
+
+New options
+-----------
+OSCeleton-Puppet adds a number of new command line options all starrting with -x.
+
+### -xr
+This option outputs the X,Y & Z data as "raw" kinect values
+
+### -xt
+This option outputs the joint rotation data.
+    Address pattern: "/orient"
+    Type tag: "sifffffffff"
+    s: Joint name, check out the full list of joints below.
+    i: The ID of the user.
+    f f f: X axis orientation data
+    f f f : Y axis orientation data
+    f f f : Z axis orientation data
+	
+or if in Quartz Composer mode:
+
+    Address pattern: "/joint/name/id"
+    Type tag: "fffffffff"
+    f f f: X axis orientation data
+    f f f : Y axis orientation data
+    f f f : Z axis orientation data
+Example (torso of user 4):
+    /orient/torso/4 0.938792 -0.0774589 0.335662 0.0649184 0.996714 0.0484401 -0.338311 -0.0236846 0.940736
+
+
+### -xd
+Runs the program with a number of options enabled by default: -xr -xt -p -w -r

@@ -1,0 +1,14 @@
+* Full bundle support [needs NTP, argh], find budle timestamp delivery
+  artimetic bug
+
+* More/better regression tests
+
+* More/better example code
+
+* Normalise URI handling [needs discussion]
+
+* GTK/Qt/etc. linking code [belongs in another library]
+
+* Rendevous/OpenWhatever (eg. howl) service discovery [low priority]
+
+* Think about a JACK transport layer [maybe^W probably not, low priority]

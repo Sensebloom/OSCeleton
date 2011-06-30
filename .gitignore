@@ -1,0 +1,10 @@
+*.ncb
+*.suo
+*.user
+liblo-0.26/lo/lo_endian.h
+liblo-0.26/config.h
+liblo-0.26/Makefile
+liblo-0.26/autom4te.cache
+liblo-0.26/lib
+Release
+Debug

@@ -23,8 +23,7 @@
 
 #include <XnCppWrapper.h>
 
-#include <ip/UdpSocket.h>
-#include <osc/OscOutboundPacketStream.h>
+#include <lo/lo.h>
 
 #include "common.h"
 
@@ -33,13 +32,16 @@
 char *ADDRESS = "127.0.0.1";
 int PORT = 7110;
 
-#define OUTPUT_BUFFER_SIZE 1024
+#define OUTPUT_BUFFER_SIZE 1024*16
 char osc_buffer[OUTPUT_BUFFER_SIZE];
-UdpTransmitSocket *transmitSocket;
 
 char tmp[50]; //Temp buffer for OSC address pattern
 int userID;
 float jointCoords[3];
+float jointOrients[9];
+
+float posConfidence;
+float orientConfidence;
 
 //Multipliers for coordinate system. This is useful if you use
 //software like animata, that needs OSC messages to use an arbitrary
@@ -67,9 +69,11 @@ bool record = false;
 bool sendRot = false;
 bool filter = false;
 bool preview = false;
+bool raw = false;
+bool sendOrient = false;
 int nDimensions = 3;
 
-void (*oscFunc)(osc::OutboundPacketStream*, char*) = NULL;
+void (*oscFunc)(lo_bundle*, char*) = NULL;
 
 xn::Context context;
 xn::DepthGenerator depth;
@@ -77,6 +81,7 @@ xn::DepthMetaData depthMD;
 xn::UserGenerator userGenerator;
 xn::HandsGenerator handsGenerator;
 xn::GestureGenerator gestureGenerator;
+lo_address addr;
 
 XnChar g_strPose[20] = "";
 #define GESTURE_TO_USE "Wave"
@@ -95,12 +100,18 @@ void XN_CALLBACK_TYPE Gesture_Process(xn::GestureGenerator& generator, const XnC
 //hand callbacks new_hand, update_hand, lost_hand
 void XN_CALLBACK_TYPE new_hand(xn::HandsGenerator &generator, XnUserID nId, const XnPoint3D *pPosition, XnFloat fTime, void *pCookie) {
 	printf("New Hand %d\n", nId);
+	if (kitchenMode) return;
+
+	lo_send(addr, "/new_user", NULL);
 }
 void XN_CALLBACK_TYPE lost_hand(xn::HandsGenerator &generator, XnUserID nId, XnFloat fTime, void *pCookie) {
 	printf("Lost Hand %d               \n", nId);
     gestureGenerator.AddGesture(GESTURE_TO_USE, NULL);
-}
 
+	if (kitchenMode) return;
+
+	lo_send(addr, "/lost_user", NULL);
+}
 void XN_CALLBACK_TYPE update_hand(xn::HandsGenerator &generator, XnUserID nID, const XnPoint3D *pPosition, XnFloat fTime, void *pCookie) {
 	haveHand = true;
 	handCoords[0] = pPosition->X;
@@ -115,13 +126,7 @@ void XN_CALLBACK_TYPE new_user(xn::UserGenerator& generator, XnUserID nId, void*
 
 	if (kitchenMode) return;
 
-	osc::OutboundPacketStream p(osc_buffer, OUTPUT_BUFFER_SIZE);
-	p << osc::BeginBundleImmediate;
-	p << osc::BeginMessage("/new_user");
-	p << (int)nId;
-	p << osc::EndMessage;
-	p << osc::EndBundle;
-	transmitSocket->Send(p.Data(), p.Size());
+	lo_send(addr, "/new_user","i",(int)nId);
 }
 
 
@@ -132,13 +137,7 @@ void XN_CALLBACK_TYPE lost_user(xn::UserGenerator& generator, XnUserID nId, void
 
 	if (kitchenMode) return;
 
-	osc::OutboundPacketStream p( osc_buffer, OUTPUT_BUFFER_SIZE );
-	p << osc::BeginBundleImmediate;
-	p << osc::BeginMessage("/lost_user");
-	p << (int)nId;
-	p << osc::EndMessage;
-	p << osc::EndBundle;
-	transmitSocket->Send(p.Data(), p.Size());
+	lo_send(addr, "/new_user","i",(int)nId);
 }
 
 
@@ -167,13 +166,7 @@ void XN_CALLBACK_TYPE calibration_ended(xn::SkeletonCapability& capability, XnUs
 
 		if (kitchenMode) return;
 
-		osc::OutboundPacketStream p( osc_buffer, OUTPUT_BUFFER_SIZE );
-		p << osc::BeginBundleImmediate;
-		p << osc::BeginMessage( "/new_skel" );
-		p << (int)nId;
-		p << osc::EndMessage;
-		p << osc::EndBundle;
-		transmitSocket->Send(p.Data(), p.Size());
+		lo_send(addr, "/new_skel","i",(int)nId);
 	}
 	else {
 		printf("Calibration failed for user %d\n", nId);
@@ -181,81 +174,173 @@ void XN_CALLBACK_TYPE calibration_ended(xn::SkeletonCapability& capability, XnUs
 	}
 }
 
+int jointPos(XnUserID player, XnSkeletonJoint eJoint) {	
 
+	XnSkeletonJointTransformation jointTrans;
 
-int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
-	XnSkeletonJointPosition joint;
-	userGenerator.GetSkeletonCap().GetSkeletonJointPosition(player, eJoint, joint);
+	userGenerator.GetSkeletonCap().GetSkeletonJoint(player, eJoint, jointTrans);
 
-	if (joint.fConfidence < 0.5)
-		return -1;
-
+	posConfidence = jointTrans.position.fConfidence;
+	
 	userID = player;
-	jointCoords[0] = off_x + (mult_x * (1280 - joint.position.X) / 2560); //Normalize coords to 0..1 interval
-	jointCoords[1] = off_y + (mult_y * (960 - joint.position.Y) / 1920); //Normalize coords to 0..1 interval
-	jointCoords[2] = off_z + (mult_z * joint.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
 
-//for (int i=0; i<9; i++)
-	//	jointRots[i] = joint.orientation.orientation.elements[i];
+	if (!raw)
+	{
+	  jointCoords[0] = off_x + (mult_x * (1280 - jointTrans.position.position.X) / 2560); //Normalize coords to 0..1 interval
+	  jointCoords[1] = off_y + (mult_y * (960 - jointTrans.position.position.Y) / 1920); //Normalize coords to 0..1 interval
+	  jointCoords[2] = off_z + (mult_z * jointTrans.position.position.Z * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
+	}
+	else
+	{
+	  jointCoords[0] = jointTrans.position.position.X;
+	  jointCoords[1] = jointTrans.position.position.Y;
+	  jointCoords[2] = jointTrans.position.position.Z;
+	}
+
+	if (sendOrient)
+	{
+	  orientConfidence = jointTrans.orientation.fConfidence;
+	  
+	  for (int i=0; i<9; i++)
+	  {
+	    jointOrients[i] = jointTrans.orientation.orientation.elements[i];
+	  }
+	}
 
 	return 0;
 }
 
-
-
 // Generate OSC message with default format
-void genOscMsg(osc::OutboundPacketStream *p, char *name) {
-	*p << osc::BeginMessage( "/joint" );
-	*p << name;
-	if (!kitchenMode)
-		*p << userID;
-	for (int i = 0; i < nDimensions; i++)
-		*p << jointCoords[i];
-	//for (int i=0; i < 9; i++)
-	//	*p << (float)jointRots[i];
-	*p << osc::EndMessage;
+void genOscMsg(lo_bundle *bundle, char *name) {
+
+	if (handMode || posConfidence >= 0.5f)
+	{
+      sprintf(tmp, "/joint");
+
+      lo_message msg = lo_message_new();
+
+      lo_message_add_string(msg, name);
+
+      if (!kitchenMode)
+        lo_message_add_int32(msg, userID);
+
+	  for (int i = 0; i < nDimensions; i++)
+        lo_message_add_float(msg, jointCoords[i]);
+
+	  lo_bundle_add_message(*bundle, tmp, msg);
+	}
+
+	if (!kitchenMode && sendOrient && orientConfidence  >= 0.5f)
+	{
+      sprintf(tmp, "/orient");
+
+	  lo_message msg = lo_message_new();
+	  
+	  lo_message_add_string(msg, name);
+
+	  if (!kitchenMode)
+	    lo_message_add_int32(msg, userID);
+
+	  // x data is in first column
+	  lo_message_add_float(msg, jointOrients[0]);
+	  lo_message_add_float(msg, jointOrients[0+3]);
+	  lo_message_add_float(msg, jointOrients[0+6]);
+
+	  // y data is in 2nd column
+	  lo_message_add_float(msg, jointOrients[1]);
+	  lo_message_add_float(msg, jointOrients[1+3]);
+	  lo_message_add_float(msg, jointOrients[1+6]);
+	  
+	  // z data is in 3rd column
+	  lo_message_add_float(msg, jointOrients[2]);
+	  lo_message_add_float(msg, jointOrients[2+3]);
+	  lo_message_add_float(msg, jointOrients[2+6]);
+	  
+	  lo_bundle_add_message(*bundle, tmp, msg);
+	}
 }
-
-
 
 // Generate OSC message with Quartz Composer format - based on Steve Elbows's code ;)
-void genQCMsg(osc::OutboundPacketStream *p, char *name) {
-	sprintf(tmp, "/joint/%s/%d", name, userID);
-	*p << osc::BeginMessage(tmp);
-	for (int i = 0; i < nDimensions; i++)
-		*p << jointCoords[i];
-	*p << osc::EndMessage;
+void genQCMsg(lo_bundle *bundle, char *name) {
+
+	if (handMode || posConfidence >= 0.5f)
+	{
+	  sprintf(tmp, "/joint/%s/%d", name, userID);
+
+      lo_message msg = lo_message_new();
+
+	  for (int i = 0; i < nDimensions; i++)
+		  lo_message_add_float(msg, jointCoords[i]);
+
+	  lo_bundle_add_message(*bundle, tmp, msg);
+	}
+
+	if (sendOrient && orientConfidence  >= 0.5f)
+	{
+	  sprintf(tmp, "/orient/%s/%d", name, userID);
+
+	  lo_message msg = lo_message_new();
+
+	  // x data is in first column
+	  lo_message_add_float(msg, jointOrients[0]);
+	  lo_message_add_float(msg, jointOrients[0+3]);
+	  lo_message_add_float(msg, jointOrients[0+6]);
+
+	  // y data is in 2nd column
+	  lo_message_add_float(msg, jointOrients[1]);
+	  lo_message_add_float(msg, jointOrients[1+3]);
+	  lo_message_add_float(msg, jointOrients[1+6]);
+	  
+	  // z data is in 3rd column
+	  lo_message_add_float(msg, jointOrients[2]);
+	  lo_message_add_float(msg, jointOrients[2+3]);
+	  lo_message_add_float(msg, jointOrients[2+6]);
+	  
+	  lo_bundle_add_message(*bundle, tmp, msg);
+	}
 }
 
-
-
 void sendUserPosMsg(XnUserID id) {
-	osc::OutboundPacketStream p(osc_buffer, OUTPUT_BUFFER_SIZE);
 	XnPoint3D com;
 	sprintf(tmp, "/user/%d", id);
-	p << osc::BeginBundleImmediate;
-	p << osc::BeginMessage(tmp);
+	lo_bundle bundle = lo_bundle_new(LO_TT_IMMEDIATE);
+	lo_message msg = lo_message_new();
+
 	userGenerator.GetCoM(id, com);
-	p << (float)(off_x + (mult_x * (1280 - com.X) / 2560));
-	p << (float)(off_y + (mult_y * (1280 - com.Y) / 2560));
-	p << (float)(off_z + (mult_z * com.Z * 7.8125 / 10000));
-	p << osc::EndMessage;
-	p << osc::EndBundle;
-	transmitSocket->Send(p.Data(), p.Size());
+
+	if (!raw)
+	{
+		lo_message_add_float(msg, (float)(off_x + (mult_x * (1280 - com.X) / 2560)));
+		lo_message_add_float(msg, (float)(off_y + (mult_y * (1280 - com.Y) / 2560)));
+		lo_message_add_float(msg, (float)(off_z + (mult_z * com.Z * 7.8125 / 10000)));
+	}
+	else
+	{
+		lo_message_add_float(msg,com.X);
+		lo_message_add_float(msg,com.Y);
+		lo_message_add_float(msg,com.Z);
+	}
+
+	lo_bundle_add_message(bundle, tmp, msg);
 }
 
 void sendHandOSC() {
 	if (!haveHand) 
 		return;
 
-	osc::OutboundPacketStream p(osc_buffer, OUTPUT_BUFFER_SIZE);
-	p << osc::BeginBundleImmediate;
-	jointCoords[0] = off_x + (mult_x * (480 - handCoords[0]) / 960); //Normalize coords to 0..1 interval
-	jointCoords[1] = off_y + (mult_y * (320 - handCoords[1]) / 640); //Normalize coords to 0..1 interval
-	jointCoords[2] = off_z + (mult_z * handCoords[2] * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
-	oscFunc(&p, "l_hand");
-	p << osc::EndBundle;
-    transmitSocket->Send(p.Data(), p.Size());
+	lo_bundle bundle = lo_bundle_new(LO_TT_IMMEDIATE);
+
+	if (!raw) {
+	    jointCoords[0] = off_x + (mult_x * (480 - handCoords[0]) / 960); //Normalize coords to 0..1 interval
+	    jointCoords[1] = off_y + (mult_y * (320 - handCoords[1]) / 640); //Normalize coords to 0..1 interval
+	    jointCoords[2] = off_z + (mult_z * handCoords[2] * 7.8125 / 10000); //Normalize coords to 0..7.8125 interval
+	} else {
+	    jointCoords[0] = handCoords[0];
+	    jointCoords[1] = handCoords[1];
+	    jointCoords[2] = handCoords[2];
+	}
+	oscFunc(&bundle, "l_hand");
+	lo_send_bundle(addr, bundle);
 
 	printf("hand %.3f %.3f     \r", jointCoords[0], jointCoords[1]);
 	haveHand = false;
@@ -271,84 +356,82 @@ void sendOSC() {
 	userGenerator.GetUsers(aUsers, nUsers);
 	for (int i = 0; i < nUsers; ++i) {
 		if (userGenerator.GetSkeletonCap().IsTracking(aUsers[i])) {
-			osc::OutboundPacketStream p(osc_buffer, OUTPUT_BUFFER_SIZE);
-			p << osc::BeginBundleImmediate;
+			lo_bundle bundle = lo_bundle_new(LO_TT_IMMEDIATE);
 
 			if (jointPos(aUsers[i], XN_SKEL_HEAD) == 0) {
-				oscFunc(&p, "head");
+				oscFunc(&bundle, "head");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_NECK) == 0) {
-				oscFunc(&p, "neck");
+				oscFunc(&bundle, "neck");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_COLLAR) == 0) {
-				oscFunc(&p, "l_collar");
+				oscFunc(&bundle, "l_collar");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_SHOULDER) == 0) {
-				oscFunc(&p, "l_shoulder");
+				oscFunc(&bundle, "l_shoulder");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_ELBOW) == 0) {
-				oscFunc(&p, "l_elbow");
+				oscFunc(&bundle, "l_elbow");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_WRIST) == 0) {
-				oscFunc(&p, "l_wrist");
+				oscFunc(&bundle, "l_wrist");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_HAND) == 0) {
-				oscFunc(&p, "l_hand");
+				oscFunc(&bundle, "l_hand");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_FINGERTIP) == 0) {
-				oscFunc(&p, "l_fingertip");
+				oscFunc(&bundle, "l_fingertip");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_COLLAR) == 0) {
-				oscFunc(&p, "r_collar");
+				oscFunc(&bundle, "r_collar");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_SHOULDER) == 0) {
-				oscFunc(&p, "r_shoulder");
+				oscFunc(&bundle, "r_shoulder");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_ELBOW) == 0) {
-				oscFunc(&p, "r_elbow");
+				oscFunc(&bundle, "r_elbow");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_WRIST) == 0) {
-				oscFunc(&p, "r_wrist");
+				oscFunc(&bundle, "r_wrist");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_HAND) == 0) {
-				oscFunc(&p, "r_hand");
+				oscFunc(&bundle, "r_hand");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_FINGERTIP) == 0) {
-				oscFunc(&p, "r_fingertip");
+				oscFunc(&bundle, "r_fingertip");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_TORSO) == 0) {
-				oscFunc(&p, "torso");
+				oscFunc(&bundle, "torso");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_WAIST) == 0) {
-				oscFunc(&p, "waist");
+				oscFunc(&bundle, "waist");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_HIP) == 0) {
-				oscFunc(&p, "l_hip");
+				oscFunc(&bundle, "l_hip");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_KNEE) == 0) {
-				oscFunc(&p, "l_knee");
+				oscFunc(&bundle, "l_knee");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_ANKLE) == 0) {
-				oscFunc(&p, "l_ankle");
+				oscFunc(&bundle, "l_ankle");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_FOOT) == 0) {
-				oscFunc(&p, "l_foot");
+				oscFunc(&bundle, "l_foot");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_HIP) == 0) {
-				oscFunc(&p, "r_hip");
+				oscFunc(&bundle, "r_hip");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_KNEE) == 0) {
-				oscFunc(&p, "r_knee");
+				oscFunc(&bundle, "r_knee");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_ANKLE) == 0) {
-				oscFunc(&p, "r_ankle");
+				oscFunc(&bundle, "r_ankle");
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_FOOT) == 0) {
-				oscFunc(&p, "r_foot");
+				oscFunc(&bundle, "r_foot");
 			}
 
-			p << osc::EndBundle;
-		    transmitSocket->Send(p.Data(), p.Size());
+			lo_send_bundle(addr, bundle);
 		}
 		else {
 			//Send user's center of mass
@@ -382,6 +465,9 @@ Options:\n\
   -q\t\t Enable Quartz Composer OSC format.\n\
   -s <file>\t Save to file (only .oni supported at the moment).\n\
   -i <file>\t Play from file (only .oni supported at the moment).\n\
+  -xr\t\tOutput raw kinect data\n\
+  -xt\t\tOutput joint orientation data\n\
+  -xd\t\tTurn on puppet defaults: -xr -xt -q -w -r\n\
   -h\t\t Show help.\n\n\
 For a more detailed explanation of options consult the README file.\n\n",
 		   name, name);
@@ -403,7 +489,7 @@ are correctly installed.\n\n");
 
 void terminate(int ignored) {
 	context.Shutdown();
-	delete transmitSocket;
+	lo_address_free(addr);
 	if (preview)
 		glutDestroyWindow(window);
 	exit(0);
@@ -424,8 +510,10 @@ void main_loop() {
 
 
 int main(int argc, char **argv) {
+	printf("Initializing...\n");
 	unsigned int arg = 1,
-				 require_argument = 0;
+				 require_argument = 0,
+				 port_argument = 0;
 	XnMapOutputMode mapMode;
 	XnStatus nRetVal = XN_STATUS_OK;
 	XnCallbackHandle hUserCallbacks, hCalibrationCallbacks, hPoseCallbacks, hHandsCallbacks, hGestureCallbacks;
@@ -463,6 +551,7 @@ int main(int argc, char **argv) {
 				printf("Bad port number given.\n");
 				usage(argv[0]);
 			}
+			port_argument = arg+1;
 			break;
 		case 'w':
 			preview = true;
@@ -547,6 +636,26 @@ int main(int argc, char **argv) {
 		case 'r':
 			mirrorMode = false;
 			break;
+        case 'x': //Set multipliers
+			switch(argv[arg][2]) {
+			case 'r': // turn on raw mode
+				raw = true;
+				break;
+            case 't': // send joint orientations
+				sendOrient = true;
+				break; 
+			case 'd': // turn on default options
+				raw = true;
+				preview = true;
+				sendOrient = true;
+				mirrorMode = false;
+				oscFunc = &genQCMsg;				
+				break;			
+			default:
+				printf("Bad option given.\n");
+				usage(argv[0]);
+			}
+			break;
 		default:
 			printf("Unrecognized option.\n");
 			usage(argv[0]);
@@ -576,8 +685,8 @@ int main(int argc, char **argv) {
 		nRetVal = gestureGenerator.Create(context);
 		nRetVal = gestureGenerator.RegisterGestureCallbacks(Gesture_Recognized, Gesture_Process, NULL, hGestureCallbacks); 
 		nRetVal = handsGenerator.RegisterHandCallbacks(new_hand, update_hand, lost_hand, NULL, hHandsCallbacks);
-		//if (filter)
-		//	handsGenerator.SetSmoothing(0.8);
+		if (filter)
+			handsGenerator.SetSmoothing(0.2);
 	}
 	else {
 		nRetVal = context.FindExistingNode(XN_NODE_TYPE_USER, userGenerator);
@@ -595,7 +704,7 @@ int main(int argc, char **argv) {
 	
 	xnSetMirror(depth, !mirrorMode);
 
-	transmitSocket = new UdpTransmitSocket(IpEndpointName(ADDRESS, PORT));
+	addr = lo_address_new(ADDRESS, argv[port_argument]);
 	signal(SIGTERM, terminate);
 	signal(SIGINT, terminate);
 

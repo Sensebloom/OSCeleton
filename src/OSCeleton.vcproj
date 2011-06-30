@@ -63,7 +63,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="OpenNI.lib WS2_32.Lib winmm.lib liblo_d.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="lib;&quot;$(OPEN_NI_LIB)&quot;;&quot;../liblo-0.26/lib/DebugDLL&quot;"
+				AdditionalLibraryDirectories="lib;&quot;$(OPEN_NI_LIB)&quot;;&quot;../liblo-0.26/lib/DebugLib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"

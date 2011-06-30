@@ -190,6 +190,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y ..\config-msvc.h ..\..\config.h&#x0D;&#x0A;copy /Y ..\lo_endian-msvc.h ..\..\lo\lo_endian.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -206,7 +207,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../lo;../../src;../.."
+				AdditionalIncludeDirectories="../../lo;../../src;../..;&quot;..\..\..\Pre-built.2\include&quot;"
 				PreprocessorDefinitions="_DEBUG;WIN32;_CRT_SECURE_NO_DEPRECATE;HAVE_CONFIG_H;LIBLO_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -257,7 +258,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y ..\config-msvc.h ..\..\config.h&#x0D;&#x0A;copy /Y ..\lo_endian-msvc.h ..\..\lo\lo_endian.h"
+				CommandLine="copy /Y ..\config-msvc.h ..\..\config.h&#x0D;&#x0A;copy /Y ..\lo_endian-msvc.h ..\..\lo\lo_endian.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

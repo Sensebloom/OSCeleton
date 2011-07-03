@@ -215,8 +215,6 @@ void genOscMsg(lo_bundle *bundle, char *name) {
 
 	if (handMode || posConfidence >= 0.5f)
 	{
-      sprintf(tmp, "/joint");
-
       lo_message msg = lo_message_new();
 
       lo_message_add_string(msg, name);
@@ -227,13 +225,11 @@ void genOscMsg(lo_bundle *bundle, char *name) {
 	  for (int i = 0; i < nDimensions; i++)
         lo_message_add_float(msg, jointCoords[i]);
 
-	  lo_bundle_add_message(*bundle, tmp, msg);
+	  lo_bundle_add_message(*bundle, "/joint", msg);
 	}
 
 	if (!kitchenMode && sendOrient && orientConfidence  >= 0.5f)
 	{
-      sprintf(tmp, "/orient");
-
 	  lo_message msg = lo_message_new();
 	  
 	  lo_message_add_string(msg, name);
@@ -256,7 +252,7 @@ void genOscMsg(lo_bundle *bundle, char *name) {
 	  lo_message_add_float(msg, jointOrients[2+3]);
 	  lo_message_add_float(msg, jointOrients[2+6]);
 	  
-	  lo_bundle_add_message(*bundle, tmp, msg);
+	  lo_bundle_add_message(*bundle, "/orient", msg);
 	}
 }
 

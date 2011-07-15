@@ -1,0 +1,132 @@
+/*
+ *  Copyright (C) 2004 Steve Harris, Uwe Koloska
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as
+ *  published by the Free Software Foundation; either version 2.1 of the
+ *  License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  $Id$
+ */
+
+/* Minimal Modifications made to make this listen on a provided port */
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "lo/lo.h"
+
+int done = 0;
+
+void error(int num, const char *m, const char *path);
+
+int generic_handler(const char *path, const char *types, lo_arg **argv,
+        int argc, void *data, void *user_data);
+
+int foo_handler(const char *path, const char *types, lo_arg **argv, int argc,
+     void *data, void *user_data);
+
+int quit_handler(const char *path, const char *types, lo_arg **argv, int argc,
+     void *data, void *user_data);
+
+int main(int argc, char * argv[])
+{
+	if (argc < 2)
+	{
+		printf("- Missing Argument -\nUsage: osc2text port\n");
+		exit(1);
+	}
+
+	char port[6];
+	int ret;
+
+	/* TODO: We could have some better port number checks here, rather than letting
+	 * liblo handle it
+	 */
+	if ((ret = snprintf(port,6,"%s",argv[1])) < 0)
+	{
+		printf("- Invalid port -");
+		exit(ret);
+	}
+
+    /* start a new server on port 7770 */
+    lo_server_thread st = lo_server_thread_new(port, error);
+
+    /* add method that will match any path and args */
+    lo_server_thread_add_method(st, NULL, NULL, generic_handler, NULL);
+
+    /* add method that will match the path /foo/bar, with two numbers, coerced
+     * to float and int */
+    lo_server_thread_add_method(st, "/foo/bar", "fi", foo_handler, NULL);
+
+    /* add method that will match the path /quit with no args */
+    lo_server_thread_add_method(st, "/quit", "", quit_handler, NULL);
+
+    lo_server_thread_start(st);
+
+    while (!done) {
+#ifdef WIN32
+    Sleep(1);
+#else
+  usleep(1000);
+#endif
+    }
+
+    lo_server_thread_free(st);
+
+    return 0;
+}
+
+void error(int num, const char *msg, const char *path)
+{
+    printf("liblo server error %d in path %s: %s\n", num, path, msg);
+    fflush(stdout);
+}
+
+/* catch any incoming messages and display them. returning 1 means that the
+ * message has not been fully handled and the server should try other methods */
+int generic_handler(const char *path, const char *types, lo_arg **argvx,
+        int argc, void *data, void *user_data)
+{
+    int i;
+
+    printf("path: <%s>\n", path);
+    for (i=0; i<argc; i++) {
+  printf("arg %d '%c' ", i, types[i]);
+  lo_arg_pp((lo_type)types[i], argvx[i]);
+  printf("\n");
+    }
+    printf("\n");
+    fflush(stdout);
+
+    return 1;
+}
+
+int foo_handler(const char *path, const char *types, lo_arg **argv, int argc,
+     void *data, void *user_data)
+{
+    /* example showing pulling the argument values out of the argv array */
+    printf("%s <- f:%f, i:%d\n\n", path, argv[0]->f, argv[1]->i);
+    fflush(stdout);
+
+    return 0;
+}
+
+int quit_handler(const char *path, const char *types, lo_arg **argv, int argc,
+     void *data, void *user_data)
+{
+    done = 1;
+    printf("quiting\n\n");
+    fflush(stdout);
+
+    return 0;
+}
+
+/* vi:set ts=8 sts=4 sw=4: */

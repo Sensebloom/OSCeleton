@@ -318,6 +318,7 @@ void sendUserPosMsg(XnUserID id) {
 	}
 
 	lo_bundle_add_message(bundle, tmp, msg);
+	lo_send_bundle(addr, bundle);
 }
 
 void sendHandOSC() {

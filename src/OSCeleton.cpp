@@ -154,7 +154,6 @@ void XN_CALLBACK_TYPE pose_detected(xn::PoseDetectionCapability& capability, con
 // Callback: Started calibration
 void XN_CALLBACK_TYPE calibration_started(xn::SkeletonCapability& capability, XnUserID nId, void* pCookie) {
 	printf("Calibration started for user %d\n", nId);
-	lo_send(addr, "/calib_start", "i",(int)nID);
 }
 
 
@@ -172,8 +171,6 @@ void XN_CALLBACK_TYPE calibration_ended(xn::SkeletonCapability& capability, XnUs
 	else {
 		printf("Calibration failed for user %d\n", nId);
 		userGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
-		
-		lo_send(addr, "/calib_fail","i",(int)nId);
 	}
 }
 

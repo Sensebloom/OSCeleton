@@ -137,7 +137,7 @@ void XN_CALLBACK_TYPE lost_user(xn::UserGenerator& generator, XnUserID nId, void
 
 	if (kitchenMode) return;
 
-	lo_send(addr, "/new_user","i",(int)nId);
+	lo_send(addr, "/lost_user","i",(int)nId);
 }
 
 

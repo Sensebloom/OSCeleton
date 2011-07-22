@@ -59,7 +59,6 @@ int initWSock();
 
 static int resolve_address(lo_address a);
 static int create_socket(lo_address a);
-static int send_data(lo_address a, lo_server from, char *data, const size_t data_len);
 
 // message.c
 int lo_message_add_varargs_internal(lo_message m, const char *types, va_list ap,
@@ -370,7 +369,7 @@ static int create_socket(lo_address a)
     return 0;
 }
 
-static int send_data(lo_address a, lo_server from, char *data, const size_t data_len)
+int send_data(lo_address a, lo_server from, char *data, const size_t data_len)
 {
     int ret=0;
     int sock=-1;

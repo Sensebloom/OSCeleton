@@ -30,7 +30,7 @@
 
 
 char *ADDRESS = "127.0.0.1";
-int PORT = 7110;
+char *PORT = "7110";
 
 #define OUTPUT_BUFFER_SIZE 1024*16
 char osc_buffer[OUTPUT_BUFFER_SIZE];
@@ -137,7 +137,7 @@ void XN_CALLBACK_TYPE lost_user(xn::UserGenerator& generator, XnUserID nId, void
 
 	if (kitchenMode) return;
 
-	lo_send(addr, "/new_user","i",(int)nId);
+	lo_send(addr, "/lost_user","i",(int)nId);
 }
 
 
@@ -318,6 +318,7 @@ void sendUserPosMsg(XnUserID id) {
 	}
 
 	lo_bundle_add_message(bundle, tmp, msg);
+	lo_send_bundle(addr, bundle);
 }
 
 void sendHandOSC() {
@@ -548,6 +549,7 @@ int main(int argc, char **argv) {
 				usage(argv[0]);
 			}
 			port_argument = arg+1;
+			PORT = argv[arg+1];
 			break;
 		case 'w':
 			preview = true;
@@ -700,7 +702,7 @@ int main(int argc, char **argv) {
 	
 	xnSetMirror(depth, !mirrorMode);
 
-	addr = lo_address_new(ADDRESS, argv[port_argument]);
+	addr = lo_address_new(ADDRESS, PORT);
 	signal(SIGTERM, terminate);
 	signal(SIGINT, terminate);
 

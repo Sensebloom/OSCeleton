@@ -30,6 +30,9 @@ extern "C" {
 #include "lo/lo_osc_types.h"
 #include "lo/lo_errors.h"
 #include "lo/lo_lowlevel.h"
+	
+/* Modify header to expose send_data for file2osc to work */
+int send_data(lo_address a, lo_server from, char *data, const size_t data_len);
 
 /**
  * \defgroup liblo High-level OSC API

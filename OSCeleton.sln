@@ -6,7 +6,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OSCeleton", "src\OSCeleton.
 		{FB8CF783-12C2-AD48-B0E9-DA7DF5EB719B} = {FB8CF783-12C2-AD48-B0E9-DA7DF5EB719B}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblo", "liblo-0.26\build\vs2008\liblo.vcproj", "{FB8CF783-12C2-AD48-B0E9-DA7DF5EB719B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblo", "liblo-0.26-modified\build\vs2008\liblo.vcproj", "{FB8CF783-12C2-AD48-B0E9-DA7DF5EB719B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

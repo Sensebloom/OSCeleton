@@ -174,14 +174,14 @@ void XN_CALLBACK_TYPE calibration_ended(xn::SkeletonCapability& capability, XnUs
 	}
 }
 
-int jointPos(XnUserID player, XnSkeletonJoint eJoint) {	
+int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 
 	XnSkeletonJointTransformation jointTrans;
 
 	userGenerator.GetSkeletonCap().GetSkeletonJoint(player, eJoint, jointTrans);
 
 	posConfidence = jointTrans.position.fConfidence;
-	
+
 	userID = player;
 
 	if (!raw)
@@ -200,7 +200,7 @@ int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 	if (sendOrient)
 	{
 	  orientConfidence = jointTrans.orientation.fConfidence;
-	  
+
 	  for (int i=0; i<9; i++)
 	  {
 	    jointOrients[i] = jointTrans.orientation.orientation.elements[i];
@@ -231,7 +231,7 @@ void genOscMsg(lo_bundle *bundle, char *name) {
 	if (!kitchenMode && sendOrient && orientConfidence  >= 0.5f)
 	{
 	  lo_message msg = lo_message_new();
-	  
+
 	  lo_message_add_string(msg, name);
 
 	  if (!kitchenMode)
@@ -246,12 +246,12 @@ void genOscMsg(lo_bundle *bundle, char *name) {
 	  lo_message_add_float(msg, jointOrients[1]);
 	  lo_message_add_float(msg, jointOrients[1+3]);
 	  lo_message_add_float(msg, jointOrients[1+6]);
-	  
+
 	  // z data is in 3rd column
 	  lo_message_add_float(msg, jointOrients[2]);
 	  lo_message_add_float(msg, jointOrients[2+3]);
 	  lo_message_add_float(msg, jointOrients[2+6]);
-	  
+
 	  lo_bundle_add_message(*bundle, "/orient", msg);
 	}
 }
@@ -286,12 +286,12 @@ void genQCMsg(lo_bundle *bundle, char *name) {
 	  lo_message_add_float(msg, jointOrients[1]);
 	  lo_message_add_float(msg, jointOrients[1+3]);
 	  lo_message_add_float(msg, jointOrients[1+6]);
-	  
+
 	  // z data is in 3rd column
 	  lo_message_add_float(msg, jointOrients[2]);
 	  lo_message_add_float(msg, jointOrients[2+3]);
 	  lo_message_add_float(msg, jointOrients[2+6]);
-	  
+
 	  lo_bundle_add_message(*bundle, tmp, msg);
 	}
 }
@@ -322,7 +322,7 @@ void sendUserPosMsg(XnUserID id) {
 }
 
 void sendHandOSC() {
-	if (!haveHand) 
+	if (!haveHand)
 		return;
 
 	lo_bundle bundle = lo_bundle_new(LO_TT_IMMEDIATE);
@@ -641,14 +641,14 @@ int main(int argc, char **argv) {
 				break;
             case 't': // send joint orientations
 				sendOrient = true;
-				break; 
+				break;
 			case 'd': // turn on default options
 				raw = true;
 				preview = true;
 				sendOrient = true;
 				mirrorMode = false;
-				oscFunc = &genQCMsg;				
-				break;			
+				oscFunc = &genQCMsg;
+				break;
 			default:
 				printf("Bad option given.\n");
 				usage(argv[0]);
@@ -681,7 +681,7 @@ int main(int argc, char **argv) {
 	if (handMode) {
 		nRetVal = handsGenerator.Create(context);
 		nRetVal = gestureGenerator.Create(context);
-		nRetVal = gestureGenerator.RegisterGestureCallbacks(Gesture_Recognized, Gesture_Process, NULL, hGestureCallbacks); 
+		nRetVal = gestureGenerator.RegisterGestureCallbacks(Gesture_Recognized, Gesture_Process, NULL, hGestureCallbacks);
 		nRetVal = handsGenerator.RegisterHandCallbacks(new_hand, update_hand, lost_hand, NULL, hHandsCallbacks);
 		if (filter)
 			handsGenerator.SetSmoothing(0.2);
@@ -699,14 +699,14 @@ int main(int argc, char **argv) {
 		if (filter)
 			userGenerator.GetSkeletonCap().SetSmoothing(0.8);
 	}
-	
+
 	xnSetMirror(depth, !mirrorMode);
 
 	addr = lo_address_new(ADDRESS, PORT);
 	signal(SIGTERM, terminate);
 	signal(SIGINT, terminate);
 
-	printf("Configured to send OSC messages to %s:%d\n", ADDRESS, PORT);
+	printf("Configured to send OSC messages to %s:%s\n", ADDRESS, PORT);
 	printf("Multipliers (x, y, z): %f, %f, %f\n", mult_x, mult_y, mult_z);
 	printf("Offsets (x, y, z): %f, %f, %f\n", off_x, off_y, off_z);
 
@@ -722,7 +722,7 @@ int main(int argc, char **argv) {
 	context.StartGeneratingAll();
 
 	if (handMode) {
-		nRetVal = gestureGenerator.AddGesture(GESTURE_TO_USE, NULL); 
+		nRetVal = gestureGenerator.AddGesture(GESTURE_TO_USE, NULL);
 	}
 	if (record)
 		recorder.AddNodeToRecording(depth, XN_CODEC_16Z_EMB_TABLES);

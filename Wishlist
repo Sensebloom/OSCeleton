@@ -6,3 +6,5 @@ Export / playback to BVH animation file format.
 Option to use skeletal hierarchy with limb rotations instead of cartesian coordinates (for Ableton Live, blender, exporting to BVH).
 Use distance of joints to affect the layer's Z-index in animata. Maybe add options to send /layerpos messages based on some of the joints or based on the Z coords?
 Finger / wrist / other missing joints tracking
+
+Please provide support to stream skeletal data from two seperate Kinects.

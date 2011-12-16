@@ -357,72 +357,95 @@ void sendOSC() {
 
 			if (jointPos(aUsers[i], XN_SKEL_HEAD) == 0) {
 				oscFunc(&bundle, "head");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_NECK) == 0) {
 				oscFunc(&bundle, "neck");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_COLLAR) == 0) {
 				oscFunc(&bundle, "l_collar");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_SHOULDER) == 0) {
 				oscFunc(&bundle, "l_shoulder");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_ELBOW) == 0) {
 				oscFunc(&bundle, "l_elbow");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_WRIST) == 0) {
 				oscFunc(&bundle, "l_wrist");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_HAND) == 0) {
 				oscFunc(&bundle, "l_hand");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_FINGERTIP) == 0) {
 				oscFunc(&bundle, "l_fingertip");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_COLLAR) == 0) {
 				oscFunc(&bundle, "r_collar");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_SHOULDER) == 0) {
 				oscFunc(&bundle, "r_shoulder");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_ELBOW) == 0) {
 				oscFunc(&bundle, "r_elbow");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_WRIST) == 0) {
 				oscFunc(&bundle, "r_wrist");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_HAND) == 0) {
 				oscFunc(&bundle, "r_hand");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_FINGERTIP) == 0) {
 				oscFunc(&bundle, "r_fingertip");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_TORSO) == 0) {
 				oscFunc(&bundle, "torso");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_WAIST) == 0) {
 				oscFunc(&bundle, "waist");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_HIP) == 0) {
 				oscFunc(&bundle, "l_hip");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_KNEE) == 0) {
 				oscFunc(&bundle, "l_knee");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_ANKLE) == 0) {
 				oscFunc(&bundle, "l_ankle");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_FOOT) == 0) {
 				oscFunc(&bundle, "l_foot");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_HIP) == 0) {
 				oscFunc(&bundle, "r_hip");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_KNEE) == 0) {
 				oscFunc(&bundle, "r_knee");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_ANKLE) == 0) {
 				oscFunc(&bundle, "r_ankle");
+				lo_send_bundle(addr, bundle);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_FOOT) == 0) {
 				oscFunc(&bundle, "r_foot");

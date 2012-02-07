@@ -35,7 +35,9 @@ char *PORT = "7110";
 #define OUTPUT_BUFFER_SIZE 1024*16
 char osc_buffer[OUTPUT_BUFFER_SIZE];
 
-char tmp[50]; //Temp buffer for OSC address pattern
+char oscPositionAddressBuff[24][64]; //Temp buffers for OSC address pattern
+char oscOrientationAddressBuff[24][64];
+
 int userID;
 float jointCoords[3];
 float jointOrients[9];
@@ -73,7 +75,7 @@ bool raw = false;
 bool sendOrient = false;
 int nDimensions = 3;
 
-void (*oscFunc)(lo_bundle*, char*) = NULL;
+void (*oscFunc)(lo_bundle*, char*, int) = NULL;
 
 xn::Context context;
 xn::DepthGenerator depth;
@@ -211,7 +213,7 @@ int jointPos(XnUserID player, XnSkeletonJoint eJoint) {
 }
 
 // Generate OSC message with default format
-void genOscMsg(lo_bundle *bundle, char *name) {
+void genOscMsg(lo_bundle *bundle, char *name, int buffIndex) {
 
 	if (handMode || posConfidence >= 0.5f)
 	{
@@ -257,23 +259,24 @@ void genOscMsg(lo_bundle *bundle, char *name) {
 }
 
 // Generate OSC message with Quartz Composer format - based on Steve Elbows's code ;)
-void genQCMsg(lo_bundle *bundle, char *name) {
+void genQCMsg(lo_bundle *bundle, char *name, int buffIndex) {
 
 	if (handMode || posConfidence >= 0.5f)
 	{
-	  sprintf(tmp, "/joint/%s/%d", name, userID);
-
+	  sprintf(oscPositionAddressBuff[buffIndex], "/joint/%s/%d", name, userID);
       lo_message msg = lo_message_new();
 
 	  for (int i = 0; i < nDimensions; i++)
 		  lo_message_add_float(msg, jointCoords[i]);
 
-	  lo_bundle_add_message(*bundle, tmp, msg);
+	  if (lo_bundle_add_message(*bundle, oscPositionAddressBuff[buffIndex], msg) != 0) printf ("lo_bundle_add_message error\n");
+	} else {
+		printf("confidence below threshold for %s: %f\n", name, posConfidence);
 	}
 
 	if (sendOrient && orientConfidence  >= 0.5f)
 	{
-	  sprintf(tmp, "/orient/%s/%d", name, userID);
+	  sprintf(oscOrientationAddressBuff[buffIndex], "/orient/%s/%d", name, userID);
 
 	  lo_message msg = lo_message_new();
 
@@ -292,13 +295,13 @@ void genQCMsg(lo_bundle *bundle, char *name) {
 	  lo_message_add_float(msg, jointOrients[2+3]);
 	  lo_message_add_float(msg, jointOrients[2+6]);
 
-	  lo_bundle_add_message(*bundle, tmp, msg);
+	  lo_bundle_add_message(*bundle, oscOrientationAddressBuff[buffIndex], msg);
 	}
 }
 
 void sendUserPosMsg(XnUserID id) {
 	XnPoint3D com;
-	sprintf(tmp, "/user/%d", id);
+	sprintf(oscPositionAddressBuff[0], "/user/%d", id);
 	lo_bundle bundle = lo_bundle_new(LO_TT_IMMEDIATE);
 	lo_message msg = lo_message_new();
 
@@ -317,7 +320,7 @@ void sendUserPosMsg(XnUserID id) {
 		lo_message_add_float(msg,com.Z);
 	}
 
-	lo_bundle_add_message(bundle, tmp, msg);
+	lo_bundle_add_message(bundle, oscPositionAddressBuff[0], msg);
 	lo_send_bundle(addr, bundle);
 }
 
@@ -336,7 +339,7 @@ void sendHandOSC() {
 	    jointCoords[1] = handCoords[1];
 	    jointCoords[2] = handCoords[2];
 	}
-	oscFunc(&bundle, "l_hand");
+	oscFunc(&bundle, "l_hand", 6);
 	lo_send_bundle(addr, bundle);
 
 	printf("hand %.3f %.3f     \r", jointCoords[0], jointCoords[1]);
@@ -344,6 +347,7 @@ void sendHandOSC() {
 }
 
 void sendOSC() {
+
 	if (handMode) {
 		sendHandOSC();
 		return;
@@ -356,102 +360,82 @@ void sendOSC() {
 			lo_bundle bundle = lo_bundle_new(LO_TT_IMMEDIATE);
 
 			if (jointPos(aUsers[i], XN_SKEL_HEAD) == 0) {
-				oscFunc(&bundle, "head");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "head", 0);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_NECK) == 0) {
-				oscFunc(&bundle, "neck");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "neck", 1);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_COLLAR) == 0) {
-				oscFunc(&bundle, "l_collar");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "l_collar", 2);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_SHOULDER) == 0) {
-				oscFunc(&bundle, "l_shoulder");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "l_shoulder", 3);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_ELBOW) == 0) {
-				oscFunc(&bundle, "l_elbow");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "l_elbow", 4);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_WRIST) == 0) {
-				oscFunc(&bundle, "l_wrist");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "l_wrist", 5);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_HAND) == 0) {
-				oscFunc(&bundle, "l_hand");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "l_hand", 6);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_FINGERTIP) == 0) {
-				oscFunc(&bundle, "l_fingertip");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "l_fingertip", 7);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_COLLAR) == 0) {
-				oscFunc(&bundle, "r_collar");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "r_collar", 8);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_SHOULDER) == 0) {
-				oscFunc(&bundle, "r_shoulder");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "r_shoulder", 9);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_ELBOW) == 0) {
-				oscFunc(&bundle, "r_elbow");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "r_elbow", 10);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_WRIST) == 0) {
-				oscFunc(&bundle, "r_wrist");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "r_wrist", 11);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_HAND) == 0) {
-				oscFunc(&bundle, "r_hand");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "r_hand", 12);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_FINGERTIP) == 0) {
-				oscFunc(&bundle, "r_fingertip");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "r_fingertip", 13);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_TORSO) == 0) {
-				oscFunc(&bundle, "torso");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "torso", 14);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_WAIST) == 0) {
-				oscFunc(&bundle, "waist");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "waist", 15);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_HIP) == 0) {
-				oscFunc(&bundle, "l_hip");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "l_hip", 16);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_KNEE) == 0) {
-				oscFunc(&bundle, "l_knee");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "l_knee", 17);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_ANKLE) == 0) {
-				oscFunc(&bundle, "l_ankle");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "l_ankle", 18);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_LEFT_FOOT) == 0) {
-				oscFunc(&bundle, "l_foot");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "l_foot", 19);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_HIP) == 0) {
-				oscFunc(&bundle, "r_hip");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "r_hip", 20);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_KNEE) == 0) {
-				oscFunc(&bundle, "r_knee");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "r_knee", 21);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_ANKLE) == 0) {
-				oscFunc(&bundle, "r_ankle");
-				lo_send_bundle(addr, bundle);
+				oscFunc(&bundle, "r_ankle", 22);
 			}
 			if (jointPos(aUsers[i], XN_SKEL_RIGHT_FOOT) == 0) {
-				oscFunc(&bundle, "r_foot");
+				oscFunc(&bundle, "r_foot", 23);
 			}
-
-			lo_send_bundle(addr, bundle);
+			if (lo_send_bundle(addr, bundle) != 0) { 
+				printf("error: unable to send bundle\n");
+				lo_bundle_pp(bundle);
+			}
+			lo_bundle_free_messages(bundle);
 		}
 		else {
 			//Send user's center of mass
@@ -761,4 +745,3 @@ int main(int argc, char **argv) {
 
 	terminate(0);
 }
-
